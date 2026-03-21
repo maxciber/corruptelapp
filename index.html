@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>HACIENDA.EXE</title>
+<title>corruptelAPP</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -223,13 +223,16 @@ body::after {
 
 #jail-upgrade-btn {
   background:transparent;
-  border:1px solid var(--jail-border);
+  border:2px solid var(--jail-border);
   color:var(--yellow);
   font-family:'Press Start 2P',monospace;
-  font-size:5px;
-  padding:5px 7px;
+  font-size:14px;
+  width:34px; height:34px;
+  display:flex; align-items:center; justify-content:center;
   cursor:pointer;
   transition:all 0.1s;
+  flex-shrink:0;
+  line-height:1;
 }
 #jail-upgrade-btn:hover:not(:disabled) { background:var(--yellow); color:#000; }
 #jail-upgrade-btn:disabled { opacity:0.3; cursor:not-allowed; }
@@ -283,21 +286,22 @@ body::after {
 
 .distrib-btn {
   background:transparent;
-  border:1px solid var(--border);
-  color:var(--text);
   font-family:'Press Start 2P',monospace;
   font-size:6px;
   padding:7px 10px;
   cursor:pointer;
-  transition:all 0.1s;
+  transition:all 0.15s;
   white-space:nowrap;
   flex-shrink:0;
+  border:2px solid;
 }
-.distrib-btn:hover:not(:disabled) { border-color:var(--green); color:var(--green); }
-.distrib-btn.edu:hover:not(:disabled) { border-color:var(--blue); color:var(--blue); }
-.distrib-btn.san:hover:not(:disabled) { border-color:var(--green); }
-.distrib-btn.jus:hover:not(:disabled) { border-color:var(--purple); color:var(--purple); }
-.distrib-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.distrib-btn.edu { border-color:var(--blue); color:var(--blue); }
+.distrib-btn.san { border-color:var(--green); color:var(--green); }
+.distrib-btn.jus { border-color:var(--purple); color:var(--purple); }
+.distrib-btn.edu:hover:not(:disabled) { background:var(--blue); color:#000; }
+.distrib-btn.san:hover:not(:disabled) { background:var(--green); color:#000; }
+.distrib-btn.jus:hover:not(:disabled) { background:var(--purple); color:#000; }
+.distrib-btn:disabled { opacity:0.25; cursor:not-allowed; }
 
 #maintenance-info { font-size:5px; color:var(--dim); margin-left:auto; white-space:nowrap; }
 #maintenance-cost { color:var(--orange); }
@@ -343,7 +347,7 @@ body::after {
 
   #jail-title { font-size:7px; }
   #jail-counter { font-size:7px; }
-  #jail-upgrade-btn { font-size:4px; padding:4px 5px; }
+  #jail-upgrade-btn { font-size:12px; width:30px; height:30px; }
   #jail-cost { font-size:4px; }
 
   #jail-cells {
@@ -440,7 +444,7 @@ body::after {
 <body>
 
 <div id="start-screen">
-  <div id="start-title">HACIENDA.EXE</div>
+  <div id="start-title">corruptelAPP</div>
   <div id="start-sub">OPERACIÓN ANTI-CORRUPCIÓN</div>
   <div class="start-rule">
     Los <span>políticos corruptos</span> saquean los servicios públicos.<br>
@@ -464,7 +468,7 @@ body::after {
 
 <div id="game-root">
   <div id="topbar">
-    <div id="game-title">HACIENDA.EXE</div>
+    <div id="game-title">corruptelAPP</div>
     <div id="topstats">
       <div class="tstat">TIEMPO<b id="s-time">00:00</b></div>
       <div class="tstat">DETENIDOS<b id="s-arrested">0</b></div>
@@ -512,7 +516,7 @@ body::after {
         <div id="jail-title">🔒 CÁRCEL</div>
         <div id="jail-capacity-row">
           <span id="jail-counter">0/<span id="jail-max">4</span></span>
-          <button id="jail-upgrade-btn" onclick="upgradeJail()">+CELDAS</button>
+          <button id="jail-upgrade-btn" onclick="upgradeJail()">+</button>
         </div>
         <div id="jail-cost">Ampliar: €<span id="upgrade-cost">35</span></div>
       </div>
@@ -535,13 +539,18 @@ body::after {
 // POLITICIAN DATA
 // ══════════════════════════════════════════
 const POLS = [
-  { name:'Mariano',    role:'Min. Fomento',    sprite:'🧑‍💼', stealRate:0.7,  target:'edu' },
-  { name:'Esperanza',  role:'Consejera',       sprite:'👩‍💼', stealRate:0.8,  target:'san' },
-  { name:'Rodrigo',    role:'Sec. Estado',     sprite:'🕴️',  stealRate:0.9,  target:'jus' },
-  { name:'Iñaki',      role:'Asesor',          sprite:'🧔',  stealRate:0.7,  target:'edu' },
-  { name:'Bárbara',    role:'Dir. General',    sprite:'💼',  stealRate:1.0,  target:'san' },
-  { name:'Cristóbal',  role:'Subsecretario',   sprite:'🎩',  stealRate:1.2,  target:'jus' },
-  { name:'El Ministro',role:'⚠️ MINISTRO',     sprite:'🤵',  stealRate:2.8,  target:'san' },
+  { name:'Mariano',     role:'Min. Fomento',    sprite:'🧑‍💼', stealRate:0.7,  target:'edu' },
+  { name:'Esperanza',   role:'Consejera',       sprite:'👩‍💼', stealRate:0.8,  target:'san' },
+  { name:'Rodrigo',     role:'Sec. Estado',     sprite:'🕴️',  stealRate:0.9,  target:'jus' },
+  { name:'Pedro',       role:'Asesor Senior',   sprite:'🧔',  stealRate:0.7,  target:'edu' },
+  { name:'José Luis',   role:'Dir. General',    sprite:'💼',  stealRate:1.0,  target:'san' },
+  { name:'Cristóbal',   role:'Subsecretario',   sprite:'🎩',  stealRate:1.1,  target:'jus' },
+  { name:'Bárbara',     role:'Interventora',    sprite:'👩‍⚖️', stealRate:0.9,  target:'edu' },
+  { name:'Iñaki',       role:'Delegado',        sprite:'🕵️',  stealRate:0.8,  target:'san' },
+  { name:'Álvaro',      role:'Vicesecretario',  sprite:'🧑‍💻', stealRate:1.0,  target:'jus' },
+  { name:'Consuelo',    role:'Auditora',        sprite:'👩‍💼', stealRate:0.9,  target:'edu' },
+  { name:'Florentino',  role:'Contratista',     sprite:'🤑',  stealRate:1.2,  target:'san' },
+  { name:'El Ministro', role:'⚠️ MINISTRO',     sprite:'🤵',  stealRate:2.8,  target:'san' },
 ];
 
 const SVC_NAMES = { edu:'EDUCACIÓN', san:'SANIDAD', jus:'JUSTICIA' };
@@ -621,10 +630,8 @@ function mainTick() {
 
 function incomeTick() {
   if (!running) return;
-  // Generous early income that scales with phase
-  const base = 6 + G.phase * 2;
-  // Bonus for first 60 seconds
-  const earlyBonus = G.time < 60 ? 4 : 0;
+  const base = 7 + G.phase * 2;
+  const earlyBonus = G.time < 60 ? 5 : 0;
   const inc = base + earlyBonus;
   G.budget += inc;
   G.collected += inc;
@@ -647,15 +654,14 @@ function stealTick() {
 function jailTick() {
   if (!running) return;
   const prisonerCount = G.jailCells.filter(Boolean).length;
-  // Maintenance cost — visible and reasonable
-  const maint = prisonerCount * 3; // €3 per prisoner per 4s (not per second)
+  // €2 per prisoner per 4s — light maintenance, noticeable but not punishing
+  const maint = prisonerCount * 2;
   if (maint > 0) {
     G.budget = Math.max(0, G.budget - maint);
     updateBudget();
   }
   document.getElementById('maintenance-cost').textContent = maint;
 
-  // Tick timers
   let changed = false;
   G.jailCells = G.jailCells.map(cell => {
     if (!cell) return null;
@@ -827,6 +833,11 @@ function tryArrest(p) {
   G.politicians = G.politicians.filter(x => x.id !== p.id);
   G.arrested++;
   document.getElementById('s-arrested').textContent = G.arrested;
+
+  // Arrest reward — recover some of what they were stealing
+  const reward = Math.round(8 + p.tpl.stealRate * 6);
+  G.budget += reward;
+  showEvent(`✅ ${p.tpl.name} DETENIDO +€${reward}`);
 
   const jailTime = 25 + G.phase * 4;
   const cell = { name:p.tpl.name, sprite:p.tpl.sprite, timeLeft:jailTime, maxTime:jailTime };
