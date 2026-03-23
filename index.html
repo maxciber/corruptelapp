@@ -388,6 +388,8 @@ body::after {
   .distrib-btn { font-size:5px; padding:6px 8px; }
   #maintenance-info { display:none; }
 
+  .svc-corrupt-row { display:none; }
+
   #drag-hint { font-size:5px; bottom:6px; }
   #arena-label { font-size:5px; }
 
@@ -996,7 +998,14 @@ function beginDrag(p, cx, cy) {
     jail.classList.remove('drop-target');
 
     const jRect = jail.getBoundingClientRect();
-    if (mx > jRect.left - 20 && p.alive) {
+    const arenaRect = arena.getBoundingClientRect();
+    // Desktop: dragged over jail panel
+    // Mobile: dragged outside the arena bounds in any direction
+    const overJail = mx > jRect.left - 20;
+    const outsideArena = mx < arenaRect.left || mx > arenaRect.right || my < arenaRect.top || my > arenaRect.bottom;
+    const isMobile = window.innerWidth <= 600;
+
+    if ((isMobile ? outsideArena : overJail) && p.alive) {
       tryArrest(p);
     } else {
       p.dragging = false;
