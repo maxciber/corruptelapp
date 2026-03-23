@@ -25,21 +25,13 @@ body::after {
 
 #game-root { display:flex; flex-direction:column; height:100vh; height:100dvh; }
 
-#topbar {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:8px 14px; border-bottom:2px solid var(--border);
-  flex-shrink:0; background:var(--panel); gap:8px;
-}
+#topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; border-bottom:2px solid var(--border); flex-shrink:0; background:var(--panel); gap:8px; }
 #game-title { font-size:13px; color:var(--green); text-shadow:0 0 12px var(--green); letter-spacing:2px; white-space:nowrap; }
 #topstats { display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end; }
 .tstat { font-size:7px; color:var(--dim); display:flex; flex-direction:column; align-items:center; gap:3px; }
 .tstat b { font-size:9px; color:var(--yellow); }
 
-#services-row {
-  display:grid; grid-template-columns:repeat(3,1fr);
-  gap:6px; padding:8px 12px; flex-shrink:0;
-  border-bottom:2px solid var(--border); background:var(--panel);
-}
+#services-row { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:8px 12px; flex-shrink:0; border-bottom:2px solid var(--border); background:var(--panel); }
 .svc { background:#0f0f0f; border:1px solid var(--border); padding:8px 10px; display:flex; align-items:center; gap:8px; transition:border-color 0.2s; }
 .svc.warning { border-color:var(--yellow); }
 .svc.critical { border-color:var(--red); box-shadow:0 0 10px rgba(255,34,68,0.4); animation:crit-pulse 0.8s ease-in-out infinite; }
@@ -56,21 +48,16 @@ body::after {
 .svc.under-attack { border-color:var(--red)!important; background:rgba(255,34,68,0.06)!important; }
 
 #main { flex:1; display:grid; grid-template-columns:1fr 200px; overflow:hidden; min-height:0; }
-
 #arena-wrap { position:relative; border-right:2px solid var(--border); overflow:hidden; }
 #arena-label { position:absolute; top:8px; left:10px; font-size:6px; color:var(--dim); letter-spacing:1px; z-index:2; pointer-events:none; }
-#arena {
-  width:100%; height:100%; position:relative;
-  background:
-    repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px),
-    repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px);
-  cursor:default;
-}
+#arena { width:100%; height:100%; position:relative; background: repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px), repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px); cursor:default; }
 #drag-hint { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); font-size:6px; color:var(--dim); letter-spacing:1px; pointer-events:none; white-space:nowrap; }
 
-.politico { position:absolute; display:flex; flex-direction:column; align-items:center; cursor:grab; z-index:10; touch-action:none; padding:4px; }
+/* POLITICIAN — spawn animation */
+.politico { position:absolute; display:flex; flex-direction:column; align-items:center; cursor:grab; z-index:10; touch-action:none; padding:4px; animation:pol-spawn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
+@keyframes pol-spawn { 0%{opacity:0;transform:translateY(-18px) scale(0.4)} 100%{opacity:1;transform:translateY(0) scale(1)} }
 .politico:hover .pol-sprite { filter:brightness(1.4) drop-shadow(0 0 6px #ff4466); }
-.politico.dragging { cursor:grabbing; z-index:200; opacity:0.9; }
+.politico.dragging { cursor:grabbing; z-index:200; opacity:0.9; animation:none; }
 .politico.dragging .pol-sprite { transform:scale(1.15); }
 .politico.dangerous .pol-sprite { filter:drop-shadow(0 0 8px var(--red)); }
 .pol-sprite { font-size:30px; animation:pol-bob 1s steps(2) infinite; line-height:1; transition:transform 0.1s; }
@@ -88,11 +75,7 @@ body::after {
 #jail-title { font-size:9px; color:var(--yellow); text-shadow:0 0 8px var(--yellow); }
 #jail-capacity-row { display:flex; justify-content:space-between; align-items:center; }
 #jail-counter { font-size:8px; color:var(--orange); }
-#jail-upgrade-btn {
-  background:transparent; border:2px solid var(--jail-border); color:var(--yellow);
-  font-family:'Press Start 2P',monospace; font-size:14px; width:34px; height:34px;
-  display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.1s; flex-shrink:0; line-height:1;
-}
+#jail-upgrade-btn { background:transparent; border:2px solid var(--jail-border); color:var(--yellow); font-family:'Press Start 2P',monospace; font-size:14px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.1s; flex-shrink:0; line-height:1; }
 #jail-upgrade-btn:hover:not(:disabled) { background:var(--yellow); color:#000; }
 #jail-upgrade-btn:disabled { opacity:0.3; cursor:not-allowed; }
 #jail-cost { font-size:5px; color:var(--dim); }
@@ -138,8 +121,11 @@ body::after {
   .distrib-btn { font-size:5px; padding:6px 8px; }
   #drag-hint { font-size:5px; bottom:6px; } #arena-label { font-size:5px; }
   .pol-sprite { font-size:26px; } .pol-name { font-size:5px; } .pol-role { font-size:4px; } .pol-rate { font-size:4px; }
+  .go-stat-val { font-size:9px; }
+  #go-stats-grid { gap:6px; }
 }
 
+/* START */
 #start-screen { position:fixed; inset:0; background:var(--bg); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:20px; }
 #start-title { font-size:20px; color:var(--green); text-shadow:0 0 30px var(--green),0 0 60px var(--green); animation:flicker 4s infinite; letter-spacing:3px; text-align:center; }
 @keyframes flicker { 0%,18%,20%,52%,54%,100%{opacity:1} 19%,53%{opacity:0.3} }
@@ -150,18 +136,44 @@ body::after {
 @keyframes pulse-glow { 0%,100%{box-shadow:0 0 0 var(--green)} 50%{box-shadow:0 0 22px var(--green)} }
 #start-btn:hover { background:var(--green); color:#000; }
 
-#gameover-screen { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:3000; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; }
+/* LEVEL SPLASH */
+#level-splash { display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.88); flex-direction:column; align-items:center; justify-content:center; gap:14px; pointer-events:none; }
+#level-splash.active { display:flex; animation:fade-in 0.25s ease; }
+@keyframes fade-in { from{opacity:0} to{opacity:1} }
+#level-num { font-size:8px; color:var(--dim); letter-spacing:4px; }
+#level-name { font-size:15px; color:var(--yellow); text-shadow:0 0 20px var(--yellow); text-align:center; letter-spacing:2px; animation:level-glow 0.7s ease-in-out infinite alternate; }
+@keyframes level-glow { from{text-shadow:0 0 10px var(--yellow)} to{text-shadow:0 0 35px var(--yellow),0 0 60px var(--orange)} }
+#level-desc { font-size:6px; color:var(--text); text-align:center; line-height:2; }
+
+/* GAME OVER */
+#gameover-screen { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:3000; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:20px; overflow-y:auto; }
 #gameover-screen.active { display:flex; }
-#go-title { font-size:16px; color:var(--red); text-shadow:0 0 20px var(--red); animation:blink 0.7s steps(1) infinite; text-align:center; }
+#go-title { font-size:15px; color:var(--red); text-shadow:0 0 20px var(--red); animation:blink 0.7s steps(1) infinite; text-align:center; }
 @keyframes blink { 50%{opacity:0} }
-#go-msg { font-size:8px; color:var(--text); text-align:center; line-height:2.2; }
-#go-stats { font-size:8px; color:var(--yellow); text-align:center; line-height:2.2; }
-#go-record { font-size:7px; color:var(--green); }
-#restart-btn { background:var(--green); color:#000; border:none; font-family:'Press Start 2P',monospace; font-size:9px; padding:13px 26px; cursor:pointer; margin-top:8px; }
+#go-service { font-size:7px; color:var(--dim); text-align:center; margin-top:-4px; }
+
+#go-stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; max-width:380px; margin-top:4px; }
+.go-stat { background:var(--panel); border:1px solid var(--border); padding:10px; display:flex; flex-direction:column; align-items:center; gap:5px; animation:stat-reveal 0.4s ease both; }
+.go-stat:nth-child(1){animation-delay:0.1s}.go-stat:nth-child(2){animation-delay:0.2s}
+.go-stat:nth-child(3){animation-delay:0.3s}.go-stat:nth-child(4){animation-delay:0.4s}
+.go-stat:nth-child(5){animation-delay:0.5s}.go-stat:nth-child(6){animation-delay:0.6s}
+@keyframes stat-reveal { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.go-stat-label { font-size:5px; color:var(--dim); text-align:center; }
+.go-stat-val { font-size:11px; color:var(--yellow); text-shadow:0 0 8px var(--yellow); text-align:center; }
+.go-stat.wide { grid-column:1/-1; border-color:var(--red); }
+.go-stat.wide .go-stat-val { font-size:8px; color:var(--red); line-height:1.8; }
+.go-stat.best { border-color:var(--green); }
+.go-stat.best .go-stat-val { color:var(--green); text-shadow:0 0 8px var(--green); }
+
+#go-buttons { display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; justify-content:center; animation:stat-reveal 0.4s 0.7s ease both; opacity:0; }
+#restart-btn { background:var(--green); color:#000; border:none; font-family:'Press Start 2P',monospace; font-size:8px; padding:12px 20px; cursor:pointer; }
 #restart-btn:hover { background:#55ff44; }
+#share-btn { background:transparent; border:2px solid var(--blue); color:var(--blue); font-family:'Press Start 2P',monospace; font-size:8px; padding:12px 20px; cursor:pointer; transition:all 0.15s; }
+#share-btn:hover { background:var(--blue); color:#000; }
+#share-confirm { font-size:5px; color:var(--green); display:none; text-align:center; margin-top:-4px; }
 
+/* ELECTION / PENALTY */
 #event-banner { display:none; position:fixed; top:16px; left:50%; transform:translateX(-50%); background:var(--red); color:#000; font-family:'Press Start 2P',monospace; font-size:8px; padding:10px 20px; z-index:500; text-align:center; border:2px solid #ff6680; white-space:nowrap; }
-
 #election-overlay { display:none; position:fixed; inset:0; z-index:400; pointer-events:none; }
 #election-overlay.active { display:block; }
 #election-box { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.92); border:3px solid var(--yellow); box-shadow:0 0 40px rgba(255,215,0,0.3); padding:20px 28px; display:flex; flex-direction:column; align-items:center; gap:14px; pointer-events:none; animation:election-appear 0.3s ease; }
@@ -176,7 +188,6 @@ body::after {
 .elec-svc .elec-icon { font-size:18px; }
 .elec-svc.ok { border-color:var(--green); color:var(--green); box-shadow:0 0 8px rgba(57,255,20,0.3); }
 .elec-svc:not(.ok) { border-color:var(--red); color:var(--red); }
-
 #penalty-indicator { display:none; position:fixed; top:0; left:0; right:0; height:3px; background:var(--red); z-index:300; animation:penalty-pulse 1s ease-in-out infinite; }
 #penalty-indicator.active { display:block; }
 @keyframes penalty-pulse { 50%{opacity:0.4;} }
@@ -197,24 +208,36 @@ body::after {
   <button id="start-btn" onclick="startGame()">▶ COMENZAR</button>
 </div>
 
+<div id="level-splash">
+  <div id="level-num"></div>
+  <div id="level-name"></div>
+  <div id="level-desc"></div>
+</div>
+
 <div id="gameover-screen">
   <div id="go-title">SISTEMA COLAPSADO</div>
-  <div id="go-msg"></div>
-  <div id="go-stats"></div>
-  <div id="go-record"></div>
-  <button id="restart-btn" onclick="restartGame()">↺ REINTENTAR</button>
+  <div id="go-service"></div>
+  <div id="go-stats-grid">
+    <div class="go-stat"><div class="go-stat-label">TIEMPO</div><div class="go-stat-val" id="go-time">--</div></div>
+    <div class="go-stat"><div class="go-stat-label">DETENIDOS</div><div class="go-stat-val" id="go-arrested">--</div></div>
+    <div class="go-stat"><div class="go-stat-label">ROBADO</div><div class="go-stat-val" id="go-stolen">--</div></div>
+    <div class="go-stat"><div class="go-stat-label">ELECCIONES</div><div class="go-stat-val" id="go-elections">--</div></div>
+    <div class="go-stat wide"><div class="go-stat-label">PRINCIPAL CULPABLE</div><div class="go-stat-val" id="go-villain">--</div></div>
+    <div class="go-stat best"><div class="go-stat-label">RÉCORD</div><div class="go-stat-val" id="go-record-val">--</div></div>
+  </div>
+  <div id="go-buttons">
+    <button id="restart-btn" onclick="restartGame()">↺ REINTENTAR</button>
+    <button id="share-btn" onclick="shareScore()">📤 COMPARTIR</button>
+  </div>
+  <div id="share-confirm">✅ ¡Copiado! Pégalo donde quieras</div>
 </div>
 
 <div id="event-banner"></div>
-
 <div id="election-overlay">
   <div id="election-box">
     <div id="election-title">🗳️ ELECCIONES</div>
     <div id="election-subtitle">Necesitas ≥50% en al menos 2 servicios<br>para ganar el apoyo ciudadano</div>
-    <div id="election-timer-row">
-      <span id="election-timer-label">TIEMPO</span>
-      <span id="election-timer">12</span>
-    </div>
+    <div id="election-timer-row"><span id="election-timer-label">TIEMPO</span><span id="election-timer">12</span></div>
     <div id="election-services">
       <div class="elec-svc" id="elec-edu"><div class="elec-icon">📚</div>EDU</div>
       <div class="elec-svc" id="elec-san"><div class="elec-icon">🏥</div>SAN</div>
@@ -222,7 +245,6 @@ body::after {
     </div>
   </div>
 </div>
-
 <div id="penalty-indicator"></div>
 
 <div id="game-root">
@@ -235,34 +257,11 @@ body::after {
       <div class="tstat">RÉCORD<b id="s-record">--:--</b></div>
     </div>
   </div>
-
   <div id="services-row">
-    <div class="svc" id="svc-edu">
-      <div class="svc-icon">📚</div>
-      <div class="svc-info">
-        <div class="svc-name">EDUCACIÓN</div>
-        <div class="svc-bar-bg"><div class="svc-bar-fill edu" id="bar-edu" style="width:80%"></div></div>
-      </div>
-      <div class="svc-pct" id="pct-edu">80%</div>
-    </div>
-    <div class="svc" id="svc-san">
-      <div class="svc-icon">🏥</div>
-      <div class="svc-info">
-        <div class="svc-name">SANIDAD</div>
-        <div class="svc-bar-bg"><div class="svc-bar-fill san" id="bar-san" style="width:80%"></div></div>
-      </div>
-      <div class="svc-pct" id="pct-san">80%</div>
-    </div>
-    <div class="svc" id="svc-jus">
-      <div class="svc-icon">⚖️</div>
-      <div class="svc-info">
-        <div class="svc-name">JUSTICIA</div>
-        <div class="svc-bar-bg"><div class="svc-bar-fill jus" id="bar-jus" style="width:80%"></div></div>
-      </div>
-      <div class="svc-pct" id="pct-jus">80%</div>
-    </div>
+    <div class="svc" id="svc-edu"><div class="svc-icon">📚</div><div class="svc-info"><div class="svc-name">EDUCACIÓN</div><div class="svc-bar-bg"><div class="svc-bar-fill edu" id="bar-edu" style="width:80%"></div></div></div><div class="svc-pct" id="pct-edu">80%</div></div>
+    <div class="svc" id="svc-san"><div class="svc-icon">🏥</div><div class="svc-info"><div class="svc-name">SANIDAD</div><div class="svc-bar-bg"><div class="svc-bar-fill san" id="bar-san" style="width:80%"></div></div></div><div class="svc-pct" id="pct-san">80%</div></div>
+    <div class="svc" id="svc-jus"><div class="svc-icon">⚖️</div><div class="svc-info"><div class="svc-name">JUSTICIA</div><div class="svc-bar-bg"><div class="svc-bar-fill jus" id="bar-jus" style="width:80%"></div></div></div><div class="svc-pct" id="pct-jus">80%</div></div>
   </div>
-
   <div id="main">
     <div id="arena-wrap">
       <div id="arena-label">▸ ARRASTRA LOS CORRUPTOS A LA CÁRCEL</div>
@@ -272,16 +271,12 @@ body::after {
     <div id="jail-panel">
       <div id="jail-header">
         <div id="jail-title">🔒 CÁRCEL</div>
-        <div id="jail-capacity-row">
-          <span id="jail-counter">0/4</span>
-          <button id="jail-upgrade-btn" onclick="upgradeJail()">+</button>
-        </div>
+        <div id="jail-capacity-row"><span id="jail-counter">0/4</span><button id="jail-upgrade-btn" onclick="upgradeJail()">+</button></div>
         <div id="jail-cost">Ampliar: €<span id="upgrade-cost">35</span></div>
       </div>
       <div id="jail-cells"></div>
     </div>
   </div>
-
   <div id="budget-bar">
     <div id="budget-label">PRESUPUESTO</div>
     <div id="budget-amount">€0</div>
@@ -307,6 +302,14 @@ const POLS = [
   { name:'El Ministro', role:'⚠️ MINISTRO',    sprite:'🤵',  stealRate:2.8, target:'san' },
 ];
 const SVC_NAMES = { edu:'EDUCACIÓN', san:'SANIDAD', jus:'JUSTICIA' };
+const LEVELS = [
+  { name:'GOBIERNO TRANSPARENTE',  desc:'Todo tranquilo… por ahora.' },
+  { name:'GOBIERNO EN FUNCIONES',  desc:'Los asesores empiezan a moverse.' },
+  { name:'LEGISLATURA CORRUPTA',   desc:'El saqueo se acelera.' },
+  { name:'ESTADO DE ALARMA',       desc:'Los ministerios están comprometidos.' },
+  { name:'CRISIS INSTITUCIONAL',   desc:'El sistema está al límite.' },
+  { name:'REPÚBLICA BANANERA',     desc:'Solo los más valientes sobreviven.' },
+];
 
 let G={}, T={}, running=false, pid=0;
 
@@ -320,6 +323,8 @@ function freshState() {
     record:parseInt(localStorage.getItem('cap_rec')||'0'),
     upgradeCost:35,
     nextElection:90, electionActive:false, electionTimeLeft:0, popularityPenalty:0,
+    electionsWon:0, electionsLost:0,
+    damageByPol:{},
   };
 }
 
@@ -331,6 +336,7 @@ function startGame() {
 
 function restartGame() {
   document.getElementById('gameover-screen').classList.remove('active');
+  document.getElementById('share-confirm').style.display='none';
   stopLoops();
   document.getElementById('arena').innerHTML='';
   G=freshState(); running=true;
@@ -355,24 +361,16 @@ function mainTick() {
   G.time++;
   checkPhase();
   checkElection();
-  if(G.electionActive) {
-    G.electionTimeLeft--;
-    updateElectionHUD();
-    if(G.electionTimeLeft<=0) resolveElection();
-  }
+  if(G.electionActive){G.electionTimeLeft--;updateElectionHUD();if(G.electionTimeLeft<=0)resolveElection();}
   if(G.popularityPenalty>0) G.popularityPenalty--;
-  updateHUD();
-  checkDefeat();
+  updateHUD(); checkDefeat();
 }
 
 function incomeTick() {
   if(!running) return;
-  const base=7+G.phase*2;
-  const earlyBonus=G.time<60?5:0;
-  const mult=G.popularityPenalty>0?0.4:1;
+  const base=7+G.phase*2, earlyBonus=G.time<60?5:0, mult=G.popularityPenalty>0?0.4:1;
   const inc=(base+earlyBonus)*mult;
-  G.budget+=inc; G.collected+=inc;
-  updateBudget();
+  G.budget+=inc; G.collected+=inc; updateBudget();
 }
 
 function stealTick() {
@@ -382,9 +380,9 @@ function stealTick() {
     const rate=p.tpl.stealRate*(1+(G.phase-1)*0.12);
     G[p.tpl.target]=Math.max(0,G[p.tpl.target]-rate);
     G.stolen+=rate;
+    G.damageByPol[p.tpl.name]=(G.damageByPol[p.tpl.name]||0)+rate;
     showStealFloat(p,`-€${rate.toFixed(1)}`);
-    flashSvc(p.tpl.target);
-    updateServices();
+    flashSvc(p.tpl.target); updateServices();
   });
 }
 
@@ -404,25 +402,27 @@ function jailTick() {
 function doSpawn() {
   if(!running) return;
   spawnPol();
-  const interval=Math.max(2800,7000-G.phase*700)+Math.random()*1200;
-  T.spawn=setTimeout(doSpawn,interval);
+  T.spawn=setTimeout(doSpawn,Math.max(2800,7000-G.phase*700)+Math.random()*1200);
 }
 
 function checkPhase() {
   const np=Math.min(6,1+Math.floor(G.time/45));
-  if(np!==G.phase){
-    G.phase=np;
-    const msgs=['','','⚡ LLEGAN MÁS CORRUPTOS','🔥 RITMO ACELERADO','💀 MODO CRISIS','☠️ CAOS TOTAL','👹 INFIERNO'];
-    if(msgs[np]) showEvent(msgs[np]);
-  }
+  if(np!==G.phase){ G.phase=np; showLevelSplash(np); }
+}
+
+function showLevelSplash(phase) {
+  const lvl=LEVELS[phase-1]||LEVELS[LEVELS.length-1];
+  document.getElementById('level-num').textContent=`— NIVEL ${phase} —`;
+  document.getElementById('level-name').textContent=lvl.name;
+  document.getElementById('level-desc').textContent=lvl.desc;
+  const s=document.getElementById('level-splash');
+  s.classList.add('active');
+  clearTimeout(T.splash);
+  T.splash=setTimeout(()=>s.classList.remove('active'),2200);
 }
 
 function checkElection() {
-  if(G.electionActive) return;
-  if(G.time>=G.nextElection) triggerElection();
-}
-
-function triggerElection() {
+  if(G.electionActive||G.time<G.nextElection) return;
   G.electionActive=true; G.electionTimeLeft=12;
   document.getElementById('election-overlay').classList.add('active');
   updateElectionHUD(); playElectionSound();
@@ -430,9 +430,7 @@ function triggerElection() {
 
 function updateElectionHUD() {
   document.getElementById('election-timer').textContent=G.electionTimeLeft;
-  ['edu','san','jus'].forEach(s=>{
-    document.getElementById(`elec-${s}`).classList.toggle('ok',G[s]>=50);
-  });
+  ['edu','san','jus'].forEach(s=>document.getElementById(`elec-${s}`).classList.toggle('ok',G[s]>=50));
 }
 
 function resolveElection() {
@@ -441,32 +439,28 @@ function resolveElection() {
   const passing=['edu','san','jus'].filter(s=>G[s]>=50).length;
   G.nextElection=G.time+90;
   if(passing>=2){
+    G.electionsWon++;
     const bonus=25+passing*10; G.budget+=bonus; updateBudget();
     showEvent(`🗳️ ELECCIONES GANADAS +€${bonus}`); playElectionWinSound();
   } else {
-    G.popularityPenalty=30;
+    G.electionsLost++; G.popularityPenalty=30;
     showEvent('🗳️ ELECCIONES PERDIDAS — RECORTES 30s'); playElectionLoseSound();
   }
 }
 
 function spawnPol() {
   const arena=document.getElementById('arena');
-  const W=arena.offsetWidth, H=arena.offsetHeight;
+  const W=arena.offsetWidth,H=arena.offsetHeight;
   let tpl;
   if(G.phase>=4&&Math.random()<0.1) tpl=POLS[11];
   else { const maxIdx=Math.min(10,2+G.phase); tpl=POLS[Math.floor(Math.random()*(maxIdx+1))]; }
-  const id=pid++;
-  const x=20+Math.random()*(W-90), y=35+Math.random()*(H-90);
+  const id=pid++, x=20+Math.random()*(W-90), y=35+Math.random()*(H-90);
   const el=document.createElement('div');
   el.className='politico'+(tpl.stealRate>=2?' dangerous':'');
   el.id=`p${id}`; el.style.left=x+'px'; el.style.top=y+'px';
-  el.innerHTML=`
-    <div class="pol-sprite">${tpl.sprite}</div>
-    <div class="pol-name">${tpl.name}</div>
-    <div class="pol-role">${tpl.role}</div>
-    <div class="pol-rate">-€${tpl.stealRate}/s → ${SVC_NAMES[tpl.target].substring(0,3)}</div>
-  `;
+  el.innerHTML=`<div class="pol-sprite">${tpl.sprite}</div><div class="pol-name">${tpl.name}</div><div class="pol-role">${tpl.role}</div><div class="pol-rate">-€${tpl.stealRate}/s → ${SVC_NAMES[tpl.target].substring(0,3)}</div>`;
   arena.appendChild(el);
+  playSpawnSound();
   const pObj={id,el,tpl,x,y,alive:true,dragging:false};
   G.politicians.push(pObj);
   pObj.wt=setInterval(()=>{
@@ -482,7 +476,7 @@ function spawnPol() {
 }
 
 function setupDrag(p) {
-  p.el.addEventListener('mousedown', e=>{e.preventDefault();e.stopPropagation();beginDrag(p,e.clientX,e.clientY);});
+  p.el.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();beginDrag(p,e.clientX,e.clientY);});
   p.el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();beginDrag(p,e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
 }
 
@@ -490,92 +484,60 @@ function beginDrag(p,cx,cy) {
   if(!running||!p.alive||p.dragging) return;
   p.dragging=true; p.el.classList.add('dragging');
   p.el.style.transition='none'; p.el.style.zIndex=200;
-  const jail=document.getElementById('jail-panel');
-  const arena=document.getElementById('arena');
+  const jail=document.getElementById('jail-panel'), arena=document.getElementById('arena');
   const startX=cx,startY=cy,ox=p.x,oy=p.y;
-
-  function move(mx,my) {
-    p.el.style.left=(ox+mx-startX)+'px';
-    p.el.style.top=(oy+my-startY)+'px';
-    const jRect=jail.getBoundingClientRect();
-    jail.classList.toggle('drop-target',mx>jRect.left-20);
+  function move(mx,my){
+    p.el.style.left=(ox+mx-startX)+'px'; p.el.style.top=(oy+my-startY)+'px';
+    jail.classList.toggle('drop-target',mx>jail.getBoundingClientRect().left-20);
   }
-
-  function end(mx,my) {
-    document.removeEventListener('mousemove',mm);
-    document.removeEventListener('mouseup',mu);
-    document.removeEventListener('touchmove',tm);
-    document.removeEventListener('touchend',te);
+  function end(mx,my){
+    document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu);
+    document.removeEventListener('touchmove',tm); document.removeEventListener('touchend',te);
     jail.classList.remove('drop-target');
-    const jRect=jail.getBoundingClientRect();
-    const aRect=arena.getBoundingClientRect();
+    const jRect=jail.getBoundingClientRect(), aRect=arena.getBoundingClientRect();
     const isMobile=window.innerWidth<=600;
-    const overJail=mx>jRect.left-20;
-    const outsideArena=mx<aRect.left||mx>aRect.right||my<aRect.top||my>aRect.bottom;
-    if((isMobile?outsideArena:overJail)&&p.alive) {
-      tryArrest(p);
-    } else {
-      p.dragging=false; p.el.classList.remove('dragging');
-      p.el.style.transition='left 0.3s ease, top 0.3s ease';
-      p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.zIndex=10;
-    }
+    const hit=isMobile?(mx<aRect.left||mx>aRect.right||my<aRect.top||my>aRect.bottom):mx>jRect.left-20;
+    if(hit&&p.alive){ tryArrest(p); }
+    else{ p.dragging=false; p.el.classList.remove('dragging'); p.el.style.transition='left 0.3s ease, top 0.3s ease'; p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.zIndex=10; }
   }
-
-  const mm=e=>move(e.clientX,e.clientY);
-  const mu=e=>end(e.clientX,e.clientY);
+  const mm=e=>move(e.clientX,e.clientY), mu=e=>end(e.clientX,e.clientY);
   const tm=e=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);};
   const te=e=>end(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
-  document.addEventListener('mousemove',mm);
-  document.addEventListener('mouseup',mu);
-  document.addEventListener('touchmove',tm,{passive:false});
-  document.addEventListener('touchend',te);
+  document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu);
+  document.addEventListener('touchmove',tm,{passive:false}); document.addEventListener('touchend',te);
 }
 
 function tryArrest(p) {
-  const occupied=G.jailCells.filter(Boolean).length;
-  if(occupied>=G.jailMax) {
+  if(G.jailCells.filter(Boolean).length>=G.jailMax){
     p.dragging=false; p.el.classList.remove('dragging');
     p.el.style.transition='left 0.3s ease, top 0.3s ease';
     p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.zIndex=10;
     showEvent('🔒 CÁRCEL LLENA — AMPLÍA O ESPERA');
     const jp=document.getElementById('jail-panel');
-    jp.classList.add('overflow');
-    setTimeout(()=>jp.classList.remove('overflow'),1500);
+    jp.classList.add('overflow'); setTimeout(()=>jp.classList.remove('overflow'),1500);
     return;
   }
   p.alive=false; p.dragging=false; clearInterval(p.wt);
-  p.el.style.transition='opacity 0.2s, transform 0.2s';
-  p.el.style.opacity='0'; p.el.style.transform='scale(0.4)';
+  p.el.style.transition='opacity 0.2s, transform 0.2s'; p.el.style.opacity='0'; p.el.style.transform='scale(0.4)';
   setTimeout(()=>p.el.parentNode&&p.el.parentNode.removeChild(p.el),220);
   G.politicians=G.politicians.filter(x=>x.id!==p.id);
-  G.arrested++;
-  document.getElementById('s-arrested').textContent=G.arrested;
+  G.arrested++; document.getElementById('s-arrested').textContent=G.arrested;
   playArrestSound();
-  const reward=Math.round(8+p.tpl.stealRate*6);
-  G.budget+=reward;
+  const reward=Math.round(8+p.tpl.stealRate*6); G.budget+=reward;
   showEvent(`✅ ${p.tpl.name} DETENIDO +€${reward}`);
-  const jailTime=25+G.phase*4;
-  const cell={name:p.tpl.name,sprite:p.tpl.sprite,timeLeft:jailTime,maxTime:jailTime};
+  const cell={name:p.tpl.name,sprite:p.tpl.sprite,timeLeft:25+G.phase*4,maxTime:25+G.phase*4};
   for(let i=0;i<G.jailMax;i++){if(!G.jailCells[i]){G.jailCells[i]=cell;break;}}
   renderJailCells(); updateJailCount(); updateBudget();
 }
 
 function escapeFromJail(cell) {
   showEvent(`⚠️ ${cell.name} HA ESCAPADO`);
-  const arena=document.getElementById('arena');
-  const W=arena.offsetWidth,H=arena.offsetHeight;
+  const arena=document.getElementById('arena'), W=arena.offsetWidth, H=arena.offsetHeight;
   const tpl=POLS.find(t=>t.name===cell.name)||POLS[0];
-  const id=pid++;
-  const x=20+Math.random()*(W-90),y=35+Math.random()*(H-90);
+  const id=pid++, x=20+Math.random()*(W-90), y=35+Math.random()*(H-90);
   const el=document.createElement('div');
-  el.className='politico'; el.id=`p${id}`;
-  el.style.left=x+'px'; el.style.top=y+'px';
-  el.innerHTML=`
-    <div class="pol-sprite">${tpl.sprite}</div>
-    <div class="pol-name">${tpl.name} 🔓</div>
-    <div class="pol-role">${tpl.role}</div>
-    <div class="pol-rate">-€${tpl.stealRate}/s → ${SVC_NAMES[tpl.target].substring(0,3)}</div>
-  `;
+  el.className='politico'; el.id=`p${id}`; el.style.left=x+'px'; el.style.top=y+'px';
+  el.innerHTML=`<div class="pol-sprite">${tpl.sprite}</div><div class="pol-name">${tpl.name} 🔓</div><div class="pol-role">${tpl.role}</div><div class="pol-rate">-€${tpl.stealRate}/s → ${SVC_NAMES[tpl.target].substring(0,3)}</div>`;
   arena.appendChild(el);
   const pObj={id,el,tpl,x,y,alive:true,dragging:false};
   G.politicians.push(pObj);
@@ -583,8 +545,7 @@ function escapeFromJail(cell) {
     if(!pObj.alive||pObj.dragging) return;
     const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*50));
     const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*35));
-    pObj.x=nx; pObj.y=ny;
-    el.style.transition='left 1.8s ease, top 1.8s ease';
+    pObj.x=nx; pObj.y=ny; el.style.transition='left 1.8s ease, top 1.8s ease';
     el.style.left=nx+'px'; el.style.top=ny+'px';
   },2200+Math.random()*1600);
   setupDrag(pObj);
@@ -593,17 +554,12 @@ function escapeFromJail(cell) {
 function renderJailCells() {
   const c=document.getElementById('jail-cells'); c.innerHTML='';
   for(let i=0;i<G.jailMax;i++){
-    const cell=G.jailCells[i]||null;
-    const div=document.createElement('div');
+    const cell=G.jailCells[i]||null, div=document.createElement('div');
     div.className='jail-cell '+(cell?'occupied':'empty'); div.id=`jc${i}`;
     if(cell){
       const pct=(cell.timeLeft/cell.maxTime)*100;
       if(pct<25) div.classList.add('escaping');
-      div.innerHTML=`
-        <div class="prisoner-sprite">${cell.sprite}</div>
-        <div class="prisoner-name">${cell.name}</div>
-        <div class="timer-bar-bg"><div class="timer-bar-fill" id="jt${i}" style="width:${pct}%"></div></div>
-      `;
+      div.innerHTML=`<div class="prisoner-sprite">${cell.sprite}</div><div class="prisoner-name">${cell.name}</div><div class="timer-bar-bg"><div class="timer-bar-fill" id="jt${i}" style="width:${pct}%"></div></div>`;
     }
     c.appendChild(div);
   }
@@ -613,16 +569,14 @@ function updateJailTimers() {
   G.jailCells.forEach((cell,i)=>{
     if(!cell) return;
     const pct=(cell.timeLeft/cell.maxTime)*100;
-    const bar=document.getElementById(`jt${i}`);
-    const cel=document.getElementById(`jc${i}`);
+    const bar=document.getElementById(`jt${i}`), cel=document.getElementById(`jc${i}`);
     if(bar) bar.style.width=pct+'%';
     if(cel) cel.classList.toggle('escaping',pct<25);
   });
 }
 
 function updateJailCount() {
-  const n=G.jailCells.filter(Boolean).length;
-  document.getElementById('jail-counter').textContent=`${n}/${G.jailMax}`;
+  document.getElementById('jail-counter').textContent=`${G.jailCells.filter(Boolean).length}/${G.jailMax}`;
 }
 
 function upgradeJail() {
@@ -639,8 +593,27 @@ function distribute(svc) {
   updateServices(); updateBudget();
 }
 
+function shareScore() {
+  const mm=String(Math.floor(G.time/60)).padStart(2,'0'), ss=String(G.time%60).padStart(2,'0');
+  const total=G.electionsWon+G.electionsLost;
+  const txt=`🏛️ corruptelAPP\n⏱️ ${mm}:${ss} aguantando\n🚔 ${G.arrested} detenidos\n💸 €${Math.floor(G.stolen)} robados\n🗳️ ${G.electionsWon}/${total} elecciones ganadas\n¿puedes superarme?`;
+  const confirm=()=>{const c=document.getElementById('share-confirm');c.style.display='block';setTimeout(()=>c.style.display='none',3000);};
+  navigator.clipboard.writeText(txt).then(confirm).catch(()=>{
+    const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); confirm();
+  });
+}
+
 let audioCtx=null;
 function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+
+function playSpawnSound(){
+  try{
+    const ctx=getAudio(),t=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(500,t); o.frequency.exponentialRampToValueAtTime(250,t+0.12);
+    g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+0.15);
+  }catch(e){}
+}
 
 function playArrestSound(){
   try{
@@ -657,59 +630,33 @@ function playArrestSound(){
 function playElectionSound(){
   try{
     const ctx=getAudio(),t=ctx.currentTime;
-    [440,550,660].forEach((freq,i)=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sine';o.frequency.value=freq;
-      g.gain.setValueAtTime(0,t+i*0.1);g.gain.linearRampToValueAtTime(0.12,t+i*0.1+0.05);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.3);
-      o.connect(g);g.connect(ctx.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.3);
-    });
+    [440,550,660].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+i*0.1);g.gain.linearRampToValueAtTime(0.12,t+i*0.1+0.05);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.3);o.connect(g);g.connect(ctx.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.3);});
   }catch(e){}
 }
 
 function playElectionWinSound(){
   try{
     const ctx=getAudio(),t=ctx.currentTime;
-    [523,659,784,1047].forEach((freq,i)=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sine';o.frequency.value=freq;
-      g.gain.setValueAtTime(0.15,t+i*0.1);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.35);
-      o.connect(g);g.connect(ctx.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.35);
-    });
+    [523,659,784,1047].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.15,t+i*0.1);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.35);o.connect(g);g.connect(ctx.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.35);});
   }catch(e){}
 }
 
 function playElectionLoseSound(){
   try{
     const ctx=getAudio(),t=ctx.currentTime;
-    [300,220,180].forEach((freq,i)=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sawtooth';o.frequency.value=freq;
-      g.gain.setValueAtTime(0.12,t+i*0.15);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+0.4);
-      o.connect(g);g.connect(ctx.destination);o.start(t+i*0.15);o.stop(t+i*0.15+0.4);
-    });
+    [300,220,180].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.setValueAtTime(0.12,t+i*0.15);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+0.4);o.connect(g);g.connect(ctx.destination);o.start(t+i*0.15);o.stop(t+i*0.15+0.4);});
   }catch(e){}
 }
 
 function showStealFloat(p,txt){
   if(!p.el||!p.el.parentNode) return;
-  const f=document.createElement('div');
-  f.className='pol-steal-indicator';f.textContent=txt;
-  p.el.appendChild(f);
-  setTimeout(()=>{if(f.parentNode)f.parentNode.removeChild(f);},600);
+  const f=document.createElement('div'); f.className='pol-steal-indicator'; f.textContent=txt;
+  p.el.appendChild(f); setTimeout(()=>{if(f.parentNode)f.parentNode.removeChild(f);},600);
 }
 
-function flashSvc(svc){
-  const el=document.getElementById(`svc-${svc}`);
-  el.classList.add('under-attack');
-  setTimeout(()=>el.classList.remove('under-attack'),600);
-}
+function flashSvc(svc){ const el=document.getElementById(`svc-${svc}`); el.classList.add('under-attack'); setTimeout(()=>el.classList.remove('under-attack'),600); }
 
-function showEvent(msg){
-  const b=document.getElementById('event-banner');
-  b.textContent=msg;b.style.display='block';
-  clearTimeout(T.banner);
-  T.banner=setTimeout(()=>{b.style.display='none';},2800);
-}
+function showEvent(msg){ const b=document.getElementById('event-banner'); b.textContent=msg; b.style.display='block'; clearTimeout(T.banner); T.banner=setTimeout(()=>{b.style.display='none';},2800); }
 
 function updateAll(){updateHUD();updateServices();updateBudget();updateJailCount();}
 
@@ -730,8 +677,7 @@ function updateServices(){
     document.getElementById(`pct-${s}`).textContent=Math.floor(v)+'%';
     const card=document.getElementById(`svc-${s}`);
     card.classList.remove('warning','critical','under-attack');
-    if(v<20) card.classList.add('critical');
-    else if(v<40) card.classList.add('warning');
+    if(v<20) card.classList.add('critical'); else if(v<40) card.classList.add('warning');
     document.getElementById(`btn-${s}`).disabled=(v>=100||G.budget<15);
   });
 }
@@ -739,21 +685,24 @@ function updateServices(){
 function updateBudget(){
   document.getElementById('budget-amount').textContent='€'+Math.floor(G.budget);
   document.getElementById('jail-upgrade-btn').disabled=G.budget<G.upgradeCost;
-  ['edu','san','jus'].forEach(s=>{
-    document.getElementById(`btn-${s}`).disabled=(G[s]>=100||G.budget<15);
-  });
+  ['edu','san','jus'].forEach(s=>{ document.getElementById(`btn-${s}`).disabled=(G[s]>=100||G.budget<15); });
 }
 
 function checkDefeat(){
-  const col=['edu','san','jus'].find(s=>G[s]<=0);
-  if(!col) return;
+  const col=['edu','san','jus'].find(s=>G[s]<=0); if(!col) return;
   running=false; stopLoops();
-  if(G.time>G.record){G.record=G.time;localStorage.setItem('cap_rec',G.time);}
+  const isNew=G.time>G.record;
+  if(isNew){G.record=G.time;localStorage.setItem('cap_rec',G.time);}
   const mm=String(Math.floor(G.time/60)).padStart(2,'0'),ss=String(G.time%60).padStart(2,'0');
-  document.getElementById('go-msg').innerHTML=`${SVC_NAMES[col]} ha colapsado.<br>Los corruptos ganaron esta vez.`;
-  document.getElementById('go-stats').innerHTML=`Tiempo: ${mm}:${ss}<br>Detenidos: ${G.arrested} | Robado: €${Math.floor(G.stolen)}`;
-  const r=G.record;
-  document.getElementById('go-record').textContent=`RÉCORD: ${String(Math.floor(r/60)).padStart(2,'0')}:${String(r%60).padStart(2,'0')}`;
+  const villain=Object.entries(G.damageByPol).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('go-service').textContent=`${SVC_NAMES[col]} ha colapsado`;
+  document.getElementById('go-time').textContent=mm+':'+ss;
+  document.getElementById('go-arrested').textContent=G.arrested;
+  document.getElementById('go-stolen').textContent='€'+Math.floor(G.stolen);
+  document.getElementById('go-elections').textContent=`${G.electionsWon}/${G.electionsWon+G.electionsLost}`;
+  document.getElementById('go-villain').textContent=villain?`${villain[0]} — €${Math.floor(villain[1])} robados`:'Corrupción generalizada';
+  const r=G.record,rm=String(Math.floor(r/60)).padStart(2,'0'),rs=String(r%60).padStart(2,'0');
+  document.getElementById('go-record-val').textContent=(isNew?'★ NUEVO: ':'')+rm+':'+rs;
   document.getElementById('gameover-screen').classList.add('active');
 }
 </script>
