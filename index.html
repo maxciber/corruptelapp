@@ -8,92 +8,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
-  --bg: #0d0d0d;
-  --panel: #141414;
-  --border: #2a2a2a;
-  --green: #39ff14;
-  --red: #ff2244;
-  --yellow: #ffd700;
-  --blue: #00cfff;
-  --purple: #cc44ff;
-  --orange: #ff8c00;
-  --dim: #555;
-  --text: #ddd;
-  --jail-bg: #1a1208;
-  --jail-border: #8B6914;
+  --bg: #0d0d0d; --panel: #141414; --border: #2a2a2a;
+  --green: #39ff14; --red: #ff2244; --yellow: #ffd700;
+  --blue: #00cfff; --purple: #cc44ff; --orange: #ff8c00;
+  --dim: #555; --text: #ddd; --jail-bg: #1a1208; --jail-border: #8B6914;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; user-select:none; -webkit-user-select:none; }
+html, body { background:var(--bg); font-family:'Press Start 2P',monospace; color:var(--text); height:100%; overflow:hidden; }
 
-html, body {
-  background: var(--bg);
-  font-family: 'Press Start 2P', monospace;
-  color: var(--text);
-  height: 100%;
-  overflow: hidden;
-}
-
-/* scanlines */
 body::after {
-  content:'';
-  position:fixed; inset:0;
-  background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
-  pointer-events:none;
-  z-index:9998;
+  content:''; position:fixed; inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+  pointer-events:none; z-index:9998;
 }
 
-/* ════════════════════════════════
-   LAYOUT — DESKTOP (side-by-side)
-   ════════════════════════════════ */
-#game-root {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-}
+#game-root { display:flex; flex-direction:column; height:100vh; height:100dvh; }
 
-/* TOP BAR */
 #topbar {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:8px 14px;
-  border-bottom:2px solid var(--border);
-  flex-shrink:0;
-  background:var(--panel);
-  gap:8px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 14px; border-bottom:2px solid var(--border);
+  flex-shrink:0; background:var(--panel); gap:8px;
 }
-
 #game-title { font-size:13px; color:var(--green); text-shadow:0 0 12px var(--green); letter-spacing:2px; white-space:nowrap; }
-
 #topstats { display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end; }
 .tstat { font-size:7px; color:var(--dim); display:flex; flex-direction:column; align-items:center; gap:3px; }
 .tstat b { font-size:9px; color:var(--yellow); }
 
-/* SERVICES */
 #services-row {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:6px;
-  padding:8px 12px;
-  flex-shrink:0;
-  border-bottom:2px solid var(--border);
-  background:var(--panel);
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:6px; padding:8px 12px; flex-shrink:0;
+  border-bottom:2px solid var(--border); background:var(--panel);
 }
-
-.svc {
-  background:#0f0f0f;
-  border:1px solid var(--border);
-  padding:8px 10px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  transition: border-color 0.2s;
-}
+.svc { background:#0f0f0f; border:1px solid var(--border); padding:8px 10px; display:flex; align-items:center; gap:8px; transition:border-color 0.2s; }
 .svc.warning { border-color:var(--yellow); }
 .svc.critical { border-color:var(--red); box-shadow:0 0 10px rgba(255,34,68,0.4); animation:crit-pulse 0.8s ease-in-out infinite; }
 @keyframes crit-pulse { 50%{box-shadow:0 0 20px rgba(255,34,68,0.7);} }
-
 .svc-icon { font-size:18px; flex-shrink:0; }
 .svc-info { flex:1; display:flex; flex-direction:column; gap:5px; min-width:0; }
 .svc-name { font-size:6px; color:var(--dim); white-space:nowrap; }
@@ -103,165 +53,52 @@ body::after {
 .svc-bar-fill.san { background:var(--green); box-shadow:0 0 5px var(--green); }
 .svc-bar-fill.jus { background:var(--purple); box-shadow:0 0 5px var(--purple); }
 .svc-pct { font-size:8px; color:var(--text); flex-shrink:0; min-width:32px; text-align:right; }
+.svc.under-attack { border-color:var(--red)!important; background:rgba(255,34,68,0.06)!important; }
 
+#main { flex:1; display:grid; grid-template-columns:1fr 200px; overflow:hidden; min-height:0; }
 
-
-/* MAIN AREA */
-#main {
-  flex:1;
-  display:grid;
-  grid-template-columns: 1fr 200px;
-  overflow:hidden;
-  min-height:0;
-}
-
-/* ARENA */
-#arena-wrap {
-  position:relative;
-  border-right:2px solid var(--border);
-  overflow:hidden;
-}
-
-#arena-label {
-  position:absolute;
-  top:8px; left:10px;
-  font-size:6px;
-  color:var(--dim);
-  letter-spacing:1px;
-  z-index:2;
-  pointer-events:none;
-}
-
+#arena-wrap { position:relative; border-right:2px solid var(--border); overflow:hidden; }
+#arena-label { position:absolute; top:8px; left:10px; font-size:6px; color:var(--dim); letter-spacing:1px; z-index:2; pointer-events:none; }
 #arena {
-  width:100%; height:100%;
-  position:relative;
+  width:100%; height:100%; position:relative;
   background:
     repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px),
     repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px);
   cursor:default;
 }
+#drag-hint { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); font-size:6px; color:var(--dim); letter-spacing:1px; pointer-events:none; white-space:nowrap; }
 
-/* DRAG HINT */
-#drag-hint {
-  position:absolute;
-  bottom:10px; left:50%;
-  transform:translateX(-50%);
-  font-size:6px;
-  color:var(--dim);
-  letter-spacing:1px;
-  pointer-events:none;
-  white-space:nowrap;
-}
-
-/* POLITICIAN */
-.politico {
-  position:absolute;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  cursor:grab;
-  z-index:10;
-  touch-action:none;
-  padding:4px;
-}
+.politico { position:absolute; display:flex; flex-direction:column; align-items:center; cursor:grab; z-index:10; touch-action:none; padding:4px; }
 .politico:hover .pol-sprite { filter:brightness(1.4) drop-shadow(0 0 6px #ff4466); }
 .politico.dragging { cursor:grabbing; z-index:200; opacity:0.9; }
 .politico.dragging .pol-sprite { transform:scale(1.15); }
 .politico.dangerous .pol-sprite { filter:drop-shadow(0 0 8px var(--red)); }
-
 .pol-sprite { font-size:30px; animation:pol-bob 1s steps(2) infinite; line-height:1; transition:transform 0.1s; }
 @keyframes pol-bob { 0%{transform:translateY(0)} 100%{transform:translateY(-3px)} }
-
 .pol-name { font-size:6px; color:var(--red); margin-top:3px; white-space:nowrap; text-shadow:0 0 6px var(--red); }
 .pol-role { font-size:5px; color:var(--dim); white-space:nowrap; margin-top:1px; }
 .pol-rate { font-size:5px; color:var(--orange); white-space:nowrap; margin-top:1px; }
+.pol-steal-indicator { position:absolute; top:-16px; font-size:6px; color:var(--red); text-shadow:0 0 6px var(--red); animation:steal-pop 0.6s ease-out forwards; pointer-events:none; white-space:nowrap; }
+@keyframes steal-pop { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-16px)} }
 
-.pol-steal-indicator {
-  position:absolute; top:-16px;
-  font-size:6px; color:var(--red);
-  text-shadow:0 0 6px var(--red);
-  animation:steal-pop 0.6s ease-out forwards;
-  pointer-events:none; white-space:nowrap;
-}
-@keyframes steal-pop {
-  0%{opacity:1;transform:translateY(0)}
-  100%{opacity:0;transform:translateY(-16px)}
-}
-
-.svc.under-attack { border-color:var(--red)!important; background:rgba(255,34,68,0.06)!important; }
-
-/* JAIL PANEL */
-#jail-panel {
-  background:var(--jail-bg);
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  transition: box-shadow 0.2s;
-}
-
-#jail-panel.drop-target {
-  box-shadow:inset 0 0 30px rgba(255,215,0,0.15);
-  border-left:2px solid var(--yellow);
-}
+#jail-panel { background:var(--jail-bg); display:flex; flex-direction:column; overflow:hidden; transition:box-shadow 0.2s; }
+#jail-panel.drop-target { box-shadow:inset 0 0 30px rgba(255,215,0,0.15); border-left:2px solid var(--yellow); }
 #jail-panel.overflow { box-shadow:inset 0 0 20px rgba(255,34,68,0.3); }
-
-#jail-header {
-  padding:10px 10px 8px;
-  border-bottom:2px solid var(--jail-border);
-  display:flex;
-  flex-direction:column;
-  gap:7px;
-}
-
+#jail-header { padding:10px 10px 8px; border-bottom:2px solid var(--jail-border); display:flex; flex-direction:column; gap:7px; }
 #jail-title { font-size:9px; color:var(--yellow); text-shadow:0 0 8px var(--yellow); }
-
-#jail-capacity-row {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
+#jail-capacity-row { display:flex; justify-content:space-between; align-items:center; }
 #jail-counter { font-size:8px; color:var(--orange); }
-
 #jail-upgrade-btn {
-  background:transparent;
-  border:2px solid var(--jail-border);
-  color:var(--yellow);
-  font-family:'Press Start 2P',monospace;
-  font-size:14px;
-  width:34px; height:34px;
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer;
-  transition:all 0.1s;
-  flex-shrink:0;
-  line-height:1;
+  background:transparent; border:2px solid var(--jail-border); color:var(--yellow);
+  font-family:'Press Start 2P',monospace; font-size:14px; width:34px; height:34px;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.1s; flex-shrink:0; line-height:1;
 }
 #jail-upgrade-btn:hover:not(:disabled) { background:var(--yellow); color:#000; }
 #jail-upgrade-btn:disabled { opacity:0.3; cursor:not-allowed; }
-
 #jail-cost { font-size:5px; color:var(--dim); }
-
-#jail-cells {
-  flex:1;
-  padding:8px;
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:5px;
-  align-content:start;
-  overflow-y:auto;
-}
-
-.jail-cell {
-  background:#110e05;
-  border:2px solid var(--jail-border);
-  aspect-ratio:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:3px;
-}
-.jail-cell.empty { opacity:0.18; background: repeating-linear-gradient(45deg,#110e05,#110e05 4px,#161005 4px,#161005 8px); }
+#jail-cells { flex:1; padding:8px; display:grid; grid-template-columns:repeat(3,1fr); gap:5px; align-content:start; overflow-y:auto; }
+.jail-cell { background:#110e05; border:2px solid var(--jail-border); aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+.jail-cell.empty { opacity:0.18; background:repeating-linear-gradient(45deg,#110e05,#110e05 4px,#161005 4px,#161005 8px); }
 .jail-cell.empty::before { content:''; display:block; width:60%; height:2px; background:var(--jail-border); border-radius:1px; }
 .jail-cell .prisoner-sprite { font-size:20px; }
 .jail-cell .prisoner-name { font-size:4px; color:var(--yellow); text-align:center; width:100%; padding:0 3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -270,33 +107,10 @@ body::after {
 .jail-cell.escaping { border-color:var(--red)!important; animation:escape-flash 0.35s steps(1) infinite; }
 @keyframes escape-flash { 50%{background:rgba(255,34,68,0.18)} }
 
-/* BUDGET BAR — fixed bottom, always visible */
-#budget-bar {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px 14px;
-  border-top:2px solid var(--border);
-  flex-shrink:0;
-  background:var(--panel);
-  flex-wrap:wrap;
-  row-gap:8px;
-}
-
+#budget-bar { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:2px solid var(--border); flex-shrink:0; background:var(--panel); flex-wrap:wrap; row-gap:8px; }
 #budget-label { font-size:6px; color:var(--dim); flex-shrink:0; }
 #budget-amount { font-size:12px; color:var(--yellow); text-shadow:0 0 8px var(--yellow); min-width:60px; }
-
-.distrib-btn {
-  background:transparent;
-  font-family:'Press Start 2P',monospace;
-  font-size:6px;
-  padding:7px 10px;
-  cursor:pointer;
-  transition:all 0.15s;
-  white-space:nowrap;
-  flex-shrink:0;
-  border:2px solid;
-}
+.distrib-btn { background:transparent; font-family:'Press Start 2P',monospace; font-size:6px; padding:7px 10px; cursor:pointer; transition:all 0.15s; white-space:nowrap; flex-shrink:0; border:2px solid; }
 .distrib-btn.edu { border-color:var(--blue); color:var(--blue); }
 .distrib-btn.san { border-color:var(--green); color:var(--green); }
 .distrib-btn.jus { border-color:var(--purple); color:var(--purple); }
@@ -305,188 +119,67 @@ body::after {
 .distrib-btn.jus:hover:not(:disabled) { background:var(--purple); color:#000; }
 .distrib-btn:disabled { opacity:0.25; cursor:not-allowed; }
 
-
-/* ════════════════════════════════
-   LAYOUT — MOBILE (stacked)
-   ════════════════════════════════ */
-@media (max-width: 600px) {
+@media (max-width:600px) {
   #game-title { font-size:10px; }
-  .tstat { font-size:6px; }
-  .tstat b { font-size:8px; }
-  #topstats { gap:10px; }
-
-  .svc-name { font-size:5px; }
-  .svc-pct { font-size:7px; }
-  .svc-icon { font-size:16px; }
-
-  /* Stack arena + jail vertically on mobile */
-  #main {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-  }
-
-  #arena-wrap {
-    border-right: none;
-    border-bottom: 2px solid var(--border);
-  }
-
-  /* Jail goes horizontal strip at bottom of main */
-  #jail-panel {
-    flex-direction: row;
-    max-height: 110px;
-    border-top: 2px solid var(--jail-border);
-  }
-
-  #jail-header {
-    padding: 8px;
-    border-bottom: none;
-    border-right: 2px solid var(--jail-border);
-    min-width: 90px;
-    justify-content: center;
-  }
-
-  #jail-title { font-size:7px; }
-  #jail-counter { font-size:7px; }
+  .tstat { font-size:6px; } .tstat b { font-size:8px; } #topstats { gap:10px; }
+  .svc-name { font-size:5px; } .svc-pct { font-size:7px; } .svc-icon { font-size:16px; }
+  #main { grid-template-columns:1fr; grid-template-rows:1fr auto; }
+  #arena-wrap { border-right:none; border-bottom:2px solid var(--border); }
+  #jail-panel { flex-direction:row; max-height:110px; border-top:2px solid var(--jail-border); }
+  #jail-header { padding:8px; border-bottom:none; border-right:2px solid var(--jail-border); min-width:90px; justify-content:center; }
+  #jail-title { font-size:7px; } #jail-counter { font-size:7px; }
   #jail-upgrade-btn { font-size:12px; width:30px; height:30px; }
   #jail-cost { font-size:4px; }
-
-  #jail-cells {
-    grid-template-columns: repeat(6, 1fr);
-    padding: 6px;
-    gap: 4px;
-    align-content: center;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  .jail-cell { aspect-ratio:1; }
-  .jail-cell .prisoner-sprite { font-size:16px; }
-  .jail-cell .prisoner-name { font-size:3px; }
+  #jail-cells { grid-template-columns:repeat(6,1fr); padding:6px; gap:4px; align-content:center; overflow-x:auto; overflow-y:hidden; }
+  .jail-cell .prisoner-sprite { font-size:16px; } .jail-cell .prisoner-name { font-size:3px; }
   .jail-cell.empty::before { width:50%; }
-
-  /* Budget bar stacks on mobile */
-  #budget-bar {
-    padding: 8px 10px;
-    gap: 7px;
-  }
+  #budget-bar { padding:8px 10px; gap:7px; }
   #budget-amount { font-size:11px; }
   .distrib-btn { font-size:5px; padding:6px 8px; }
-  #drag-hint { font-size:5px; bottom:6px; }
-  #arena-label { font-size:5px; }
-
-  .pol-sprite { font-size:26px; }
-  .pol-name { font-size:5px; }
-  .pol-role { font-size:4px; }
-  .pol-rate { font-size:4px; }
+  #drag-hint { font-size:5px; bottom:6px; } #arena-label { font-size:5px; }
+  .pol-sprite { font-size:26px; } .pol-name { font-size:5px; } .pol-role { font-size:4px; } .pol-rate { font-size:4px; }
 }
 
-/* ════════════════════════════════
-   OVERLAYS
-   ════════════════════════════════ */
-#start-screen {
-  position:fixed; inset:0; background:var(--bg); z-index:3000;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
-  padding:20px;
-}
-#start-title {
-  font-size:20px; color:var(--green);
-  text-shadow:0 0 30px var(--green),0 0 60px var(--green);
-  animation:flicker 4s infinite; letter-spacing:3px; text-align:center;
-}
+#start-screen { position:fixed; inset:0; background:var(--bg); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:20px; }
+#start-title { font-size:20px; color:var(--green); text-shadow:0 0 30px var(--green),0 0 60px var(--green); animation:flicker 4s infinite; letter-spacing:3px; text-align:center; }
 @keyframes flicker { 0%,18%,20%,52%,54%,100%{opacity:1} 19%,53%{opacity:0.3} }
 #start-sub { font-size:7px; color:var(--dim); letter-spacing:2px; text-align:center; }
-.start-rule {
-  font-size:6px; color:var(--text); line-height:2.4; text-align:center;
-  background:var(--panel); border:1px solid var(--border); padding:16px 20px;
-  max-width:440px; width:100%;
-}
+.start-rule { font-size:6px; color:var(--text); line-height:2.4; text-align:center; background:var(--panel); border:1px solid var(--border); padding:16px 20px; max-width:440px; width:100%; }
 .start-rule span { color:var(--yellow); }
-#start-btn {
-  background:transparent; border:2px solid var(--green);
-  color:var(--green); font-family:'Press Start 2P',monospace;
-  font-size:10px; padding:13px 30px; cursor:pointer;
-  animation:pulse-glow 1.5s ease-in-out infinite;
-}
+#start-btn { background:transparent; border:2px solid var(--green); color:var(--green); font-family:'Press Start 2P',monospace; font-size:10px; padding:13px 30px; cursor:pointer; animation:pulse-glow 1.5s ease-in-out infinite; }
 @keyframes pulse-glow { 0%,100%{box-shadow:0 0 0 var(--green)} 50%{box-shadow:0 0 22px var(--green)} }
 #start-btn:hover { background:var(--green); color:#000; }
 
-#gameover-screen {
-  display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,0.92); z-index:3000;
-  flex-direction:column; align-items:center; justify-content:center;
-  gap:16px; padding:20px;
-}
+#gameover-screen { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:3000; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; }
 #gameover-screen.active { display:flex; }
 #go-title { font-size:16px; color:var(--red); text-shadow:0 0 20px var(--red); animation:blink 0.7s steps(1) infinite; text-align:center; }
 @keyframes blink { 50%{opacity:0} }
 #go-msg { font-size:8px; color:var(--text); text-align:center; line-height:2.2; }
 #go-stats { font-size:8px; color:var(--yellow); text-align:center; line-height:2.2; }
 #go-record { font-size:7px; color:var(--green); }
-#restart-btn {
-  background:var(--green); color:#000;
-  border:none; font-family:'Press Start 2P',monospace;
-  font-size:9px; padding:13px 26px; cursor:pointer; margin-top:8px;
-}
+#restart-btn { background:var(--green); color:#000; border:none; font-family:'Press Start 2P',monospace; font-size:9px; padding:13px 26px; cursor:pointer; margin-top:8px; }
 #restart-btn:hover { background:#55ff44; }
 
-#event-banner {
-  display:none; position:fixed;
-  top:16px; left:50%; transform:translateX(-50%);
-  background:var(--red); color:#000;
-  font-family:'Press Start 2P',monospace; font-size:8px;
-  padding:10px 20px; z-index:500; text-align:center;
-  border:2px solid #ff6680; white-space:nowrap;
-}
+#event-banner { display:none; position:fixed; top:16px; left:50%; transform:translateX(-50%); background:var(--red); color:#000; font-family:'Press Start 2P',monospace; font-size:8px; padding:10px 20px; z-index:500; text-align:center; border:2px solid #ff6680; white-space:nowrap; }
 
-/* ELECTION OVERLAY */
-#election-overlay {
-  display:none; position:fixed;
-  inset:0; z-index:400;
-  pointer-events:none;
-}
+#election-overlay { display:none; position:fixed; inset:0; z-index:400; pointer-events:none; }
 #election-overlay.active { display:block; }
-
-#election-box {
-  position:absolute;
-  top:50%; left:50%; transform:translate(-50%,-50%);
-  background:rgba(0,0,0,0.92);
-  border:3px solid var(--yellow);
-  box-shadow:0 0 40px rgba(255,215,0,0.3);
-  padding:20px 28px;
-  display:flex; flex-direction:column; align-items:center; gap:14px;
-  pointer-events:none;
-  animation:election-appear 0.3s ease;
-}
-@keyframes election-appear {
-  from { transform:translate(-50%,-50%) scale(0.8); opacity:0; }
-  to   { transform:translate(-50%,-50%) scale(1);   opacity:1; }
-}
-
+#election-box { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.92); border:3px solid var(--yellow); box-shadow:0 0 40px rgba(255,215,0,0.3); padding:20px 28px; display:flex; flex-direction:column; align-items:center; gap:14px; pointer-events:none; animation:election-appear 0.3s ease; }
+@keyframes election-appear { from{transform:translate(-50%,-50%) scale(0.8);opacity:0;} to{transform:translate(-50%,-50%) scale(1);opacity:1;} }
 #election-title { font-size:11px; color:var(--yellow); text-shadow:0 0 14px var(--yellow); letter-spacing:2px; }
 #election-subtitle { font-size:6px; color:var(--text); text-align:center; line-height:2; }
 #election-timer-row { display:flex; align-items:center; gap:10px; }
 #election-timer-label { font-size:6px; color:var(--dim); }
 #election-timer { font-size:20px; color:var(--red); text-shadow:0 0 10px var(--red); min-width:28px; text-align:center; }
-
 #election-services { display:flex; gap:12px; }
-.elec-svc {
-  display:flex; flex-direction:column; align-items:center; gap:4px;
-  font-size:6px; color:var(--dim); padding:8px 12px;
-  border:1px solid var(--border);
-  transition:all 0.2s;
-}
+.elec-svc { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:6px; color:var(--dim); padding:8px 12px; border:1px solid var(--border); transition:all 0.2s; }
 .elec-svc .elec-icon { font-size:18px; }
 .elec-svc.ok { border-color:var(--green); color:var(--green); box-shadow:0 0 8px rgba(57,255,20,0.3); }
 .elec-svc:not(.ok) { border-color:var(--red); color:var(--red); }
 
-#penalty-indicator {
-  position:fixed; top:0; left:0; right:0; height:3px;
-  background:var(--red); z-index:300;
-  display:none;
-  animation:penalty-pulse 1s ease-in-out infinite;
-}
+#penalty-indicator { display:none; position:fixed; top:0; left:0; right:0; height:3px; background:var(--red); z-index:300; animation:penalty-pulse 1s ease-in-out infinite; }
 #penalty-indicator.active { display:block; }
-@keyframes penalty-pulse { 50%{ opacity:0.4; } }
+@keyframes penalty-pulse { 50%{opacity:0.4;} }
 </style>
 </head>
 <body>
@@ -497,8 +190,8 @@ body::after {
   <div class="start-rule">
     Los <span>políticos corruptos</span> saquean los servicios públicos.<br>
     <span>Arrástralos a la cárcel</span> antes de que todo colapse.<br><br>
-    Cada 90 segundos llegan las <span>🗳️ ELECCIONES</span>.<br>
-    Necesitas ≥50% en al menos 2 servicios — si no, <span>recortes de income</span> durante 30s.<br><br>
+    Cada 90s llegan las <span>🗳️ ELECCIONES</span> — necesitas ≥50% en 2 servicios.<br>
+    Si pierdes: <span>recortes de presupuesto</span> durante 30s.<br><br>
     Si <span>Educación, Sanidad o Justicia</span> llegan a 0… has perdido.
   </div>
   <button id="start-btn" onclick="startGame()">▶ COMENZAR</button>
@@ -514,7 +207,6 @@ body::after {
 
 <div id="event-banner"></div>
 
-<!-- ELECTION OVERLAY -->
 <div id="election-overlay">
   <div id="election-box">
     <div id="election-title">🗳️ ELECCIONES</div>
@@ -531,7 +223,6 @@ body::after {
   </div>
 </div>
 
-<!-- PENALTY INDICATOR -->
 <div id="penalty-indicator"></div>
 
 <div id="game-root">
@@ -550,8 +241,7 @@ body::after {
       <div class="svc-icon">📚</div>
       <div class="svc-info">
         <div class="svc-name">EDUCACIÓN</div>
-        <div class="svc-bar-bg"><div class="svc-bar-fill edu" id="bar-edu" style="width:80%"></div></div></div>
-        </div>
+        <div class="svc-bar-bg"><div class="svc-bar-fill edu" id="bar-edu" style="width:80%"></div></div>
       </div>
       <div class="svc-pct" id="pct-edu">80%</div>
     </div>
@@ -559,8 +249,7 @@ body::after {
       <div class="svc-icon">🏥</div>
       <div class="svc-info">
         <div class="svc-name">SANIDAD</div>
-        <div class="svc-bar-bg"><div class="svc-bar-fill san" id="bar-san" style="width:80%"></div></div></div>
-        </div>
+        <div class="svc-bar-bg"><div class="svc-bar-fill san" id="bar-san" style="width:80%"></div></div>
       </div>
       <div class="svc-pct" id="pct-san">80%</div>
     </div>
@@ -568,8 +257,7 @@ body::after {
       <div class="svc-icon">⚖️</div>
       <div class="svc-info">
         <div class="svc-name">JUSTICIA</div>
-        <div class="svc-bar-bg"><div class="svc-bar-fill jus" id="bar-jus" style="width:80%"></div></div></div>
-        </div>
+        <div class="svc-bar-bg"><div class="svc-bar-fill jus" id="bar-jus" style="width:80%"></div></div>
       </div>
       <div class="svc-pct" id="pct-jus">80%</div>
     </div>
@@ -581,12 +269,11 @@ body::after {
       <div id="arena"></div>
       <div id="drag-hint">AGARRA Y ARRASTRA ▶</div>
     </div>
-
     <div id="jail-panel">
       <div id="jail-header">
         <div id="jail-title">🔒 CÁRCEL</div>
         <div id="jail-capacity-row">
-          <span id="jail-counter">0/<span id="jail-max">4</span></span>
+          <span id="jail-counter">0/4</span>
           <button id="jail-upgrade-btn" onclick="upgradeJail()">+</button>
         </div>
         <div id="jail-cost">Ampliar: €<span id="upgrade-cost">35</span></div>
@@ -605,81 +292,468 @@ body::after {
 </div>
 
 <script>
+const POLS = [
+  { name:'Mariano',     role:'Min. Fomento',   sprite:'🧑‍💼', stealRate:0.7, target:'edu' },
+  { name:'Esperanza',   role:'Consejera',      sprite:'👩‍💼', stealRate:0.8, target:'san' },
+  { name:'Rodrigo',     role:'Sec. Estado',    sprite:'🕴️',  stealRate:0.9, target:'jus' },
+  { name:'Pedro',       role:'Asesor Senior',  sprite:'🧔',  stealRate:0.7, target:'edu' },
+  { name:'José Luis',   role:'Dir. General',   sprite:'💼',  stealRate:1.0, target:'san' },
+  { name:'Cristóbal',   role:'Subsecretario',  sprite:'🎩',  stealRate:1.1, target:'jus' },
+  { name:'Bárbara',     role:'Interventora',   sprite:'👩‍⚖️', stealRate:0.9, target:'edu' },
+  { name:'Iñaki',       role:'Delegado',       sprite:'🕵️',  stealRate:0.8, target:'san' },
+  { name:'Álvaro',      role:'Vicesecretario', sprite:'🧑‍💻', stealRate:1.0, target:'jus' },
+  { name:'Consuelo',    role:'Auditora',       sprite:'👩‍💼', stealRate:0.9, target:'edu' },
+  { name:'Florentino',  role:'Contratista',    sprite:'🤑',  stealRate:1.2, target:'san' },
+  { name:'El Ministro', role:'⚠️ MINISTRO',    sprite:'🤵',  stealRate:2.8, target:'san' },
+];
+const SVC_NAMES = { edu:'EDUCACIÓN', san:'SANIDAD', jus:'JUSTICIA' };
 
-function showStealFloat(p, txt) {
-  if (!p.el || !p.el.parentNode) return;
-  const f = document.createElement('div');
-  f.className = 'pol-steal-indicator';
-  f.textContent = txt;
-  p.el.appendChild(f);
-  setTimeout(()=>{ if(f.parentNode) f.parentNode.removeChild(f); }, 600);
+let G={}, T={}, running=false, pid=0;
+
+function freshState() {
+  return {
+    edu:80, san:80, jus:80,
+    budget:25, collected:0, stolen:0, arrested:0,
+    time:0, phase:1,
+    jailMax:4, jailCells:new Array(4).fill(null),
+    politicians:[],
+    record:parseInt(localStorage.getItem('cap_rec')||'0'),
+    upgradeCost:35,
+    nextElection:90, electionActive:false, electionTimeLeft:0, popularityPenalty:0,
+  };
 }
 
-function flashSvc(svc) {
-  const el = document.getElementById(`svc-${svc}`);
-  el.classList.add('under-attack');
-  setTimeout(()=>el.classList.remove('under-attack'), 600);
+function startGame() {
+  document.getElementById('start-screen').style.display='none';
+  G=freshState(); running=true;
+  renderJailCells(); updateAll(); startLoops();
 }
 
-function showEvent(msg) {
-  const b = document.getElementById('event-banner');
-  b.textContent = msg;
-  b.style.display = 'block';
-  clearTimeout(T.banner);
-  T.banner = setTimeout(()=>{ b.style.display='none'; }, 2800);
-}
-
-// ══════════════════════════════════════════
-// HUD
-// ══════════════════════════════════════════
-function updateAll() { updateHUD(); updateServices(); updateBudget(); updateJailCount(); }
-
-function updateHUD() {
-  const t=G.time, mm=String(Math.floor(t/60)).padStart(2,'0'), ss=String(t%60).padStart(2,'0');
-  document.getElementById('s-time').textContent = mm+':'+ss;
-  document.getElementById('s-arrested').textContent = G.arrested;
-  document.getElementById('s-stolen').textContent = '€'+Math.floor(G.stolen);
-  const r=G.record;
-  if(r>0) document.getElementById('s-record').textContent = String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0');
-  // Penalty bar
-  document.getElementById('penalty-indicator').classList.toggle('active', G.popularityPenalty > 0);
-}
-
-function updateServices() {
-  ['edu','san','jus'].forEach(s => {
-    const v = Math.max(0, Math.min(100, G[s]));
-    document.getElementById(`bar-${s}`).style.width = v+'%';
-    document.getElementById(`pct-${s}`).textContent = Math.floor(v)+'%';
-    const card = document.getElementById(`svc-${s}`);
-    card.classList.remove('warning','critical','under-attack');
-    if (v<20) card.classList.add('critical');
-    else if (v<40) card.classList.add('warning');
-    document.getElementById(`btn-${s}`).disabled = (v>=100 || G.budget<15);
-  });
-}
-
-function updateBudget() {
-  document.getElementById('budget-amount').textContent = '€'+Math.floor(G.budget);
-  document.getElementById('jail-upgrade-btn').disabled = G.budget < G.upgradeCost;
-  ['edu','san','jus'].forEach(s => {
-    document.getElementById(`btn-${s}`).disabled = (G[s]>=100 || G.budget<15);
-  });
-}
-
-// ══════════════════════════════════════════
-// DEFEAT
-// ══════════════════════════════════════════
-function checkDefeat() {
-  const col = ['edu','san','jus'].find(s=>G[s]<=0);
-  if (!col) return;
-  running = false;
+function restartGame() {
+  document.getElementById('gameover-screen').classList.remove('active');
   stopLoops();
-  if (G.time > G.record) { G.record=G.time; localStorage.setItem('hx3_rec', G.time); }
-  const mm=String(Math.floor(G.time/60)).padStart(2,'0'), ss=String(G.time%60).padStart(2,'0');
-  document.getElementById('go-msg').innerHTML = `${SVC_NAMES[col]} ha colapsado.<br>Los corruptos ganaron esta vez.`;
-  document.getElementById('go-stats').innerHTML = `Tiempo: ${mm}:${ss}<br>Detenidos: ${G.arrested} | Robado: €${Math.floor(G.stolen)}`;
+  document.getElementById('arena').innerHTML='';
+  G=freshState(); running=true;
+  renderJailCells(); updateAll(); startLoops();
+}
+
+function stopLoops() {
+  Object.values(T).forEach(t=>{clearInterval(t);clearTimeout(t);}); T={};
+  if(G.politicians) G.politicians.forEach(p=>clearInterval(p.wt));
+}
+
+function startLoops() {
+  T.main   = setInterval(mainTick,   1000);
+  T.income = setInterval(incomeTick, 2000);
+  T.steal  = setInterval(stealTick,  1000);
+  T.jail   = setInterval(jailTick,   4000);
+  T.spawn  = setTimeout(doSpawn, 2500);
+}
+
+function mainTick() {
+  if(!running) return;
+  G.time++;
+  checkPhase();
+  checkElection();
+  if(G.electionActive) {
+    G.electionTimeLeft--;
+    updateElectionHUD();
+    if(G.electionTimeLeft<=0) resolveElection();
+  }
+  if(G.popularityPenalty>0) G.popularityPenalty--;
+  updateHUD();
+  checkDefeat();
+}
+
+function incomeTick() {
+  if(!running) return;
+  const base=7+G.phase*2;
+  const earlyBonus=G.time<60?5:0;
+  const mult=G.popularityPenalty>0?0.4:1;
+  const inc=(base+earlyBonus)*mult;
+  G.budget+=inc; G.collected+=inc;
+  updateBudget();
+}
+
+function stealTick() {
+  if(!running) return;
+  G.politicians.forEach(p=>{
+    if(!p.alive||p.dragging) return;
+    const rate=p.tpl.stealRate*(1+(G.phase-1)*0.12);
+    G[p.tpl.target]=Math.max(0,G[p.tpl.target]-rate);
+    G.stolen+=rate;
+    showStealFloat(p,`-€${rate.toFixed(1)}`);
+    flashSvc(p.tpl.target);
+    updateServices();
+  });
+}
+
+function jailTick() {
+  if(!running) return;
+  let changed=false;
+  G.jailCells=G.jailCells.map(cell=>{
+    if(!cell) return null;
+    cell.timeLeft-=4;
+    if(cell.timeLeft<=0){escapeFromJail(cell);changed=true;return null;}
+    return cell;
+  });
+  if(changed) renderJailCells(); else updateJailTimers();
+  updateJailCount();
+}
+
+function doSpawn() {
+  if(!running) return;
+  spawnPol();
+  const interval=Math.max(2800,7000-G.phase*700)+Math.random()*1200;
+  T.spawn=setTimeout(doSpawn,interval);
+}
+
+function checkPhase() {
+  const np=Math.min(6,1+Math.floor(G.time/45));
+  if(np!==G.phase){
+    G.phase=np;
+    const msgs=['','','⚡ LLEGAN MÁS CORRUPTOS','🔥 RITMO ACELERADO','💀 MODO CRISIS','☠️ CAOS TOTAL','👹 INFIERNO'];
+    if(msgs[np]) showEvent(msgs[np]);
+  }
+}
+
+function checkElection() {
+  if(G.electionActive) return;
+  if(G.time>=G.nextElection) triggerElection();
+}
+
+function triggerElection() {
+  G.electionActive=true; G.electionTimeLeft=12;
+  document.getElementById('election-overlay').classList.add('active');
+  updateElectionHUD(); playElectionSound();
+}
+
+function updateElectionHUD() {
+  document.getElementById('election-timer').textContent=G.electionTimeLeft;
+  ['edu','san','jus'].forEach(s=>{
+    document.getElementById(`elec-${s}`).classList.toggle('ok',G[s]>=50);
+  });
+}
+
+function resolveElection() {
+  G.electionActive=false;
+  document.getElementById('election-overlay').classList.remove('active');
+  const passing=['edu','san','jus'].filter(s=>G[s]>=50).length;
+  G.nextElection=G.time+90;
+  if(passing>=2){
+    const bonus=25+passing*10; G.budget+=bonus; updateBudget();
+    showEvent(`🗳️ ELECCIONES GANADAS +€${bonus}`); playElectionWinSound();
+  } else {
+    G.popularityPenalty=30;
+    showEvent('🗳️ ELECCIONES PERDIDAS — RECORTES 30s'); playElectionLoseSound();
+  }
+}
+
+function spawnPol() {
+  const arena=document.getElementById('arena');
+  const W=arena.offsetWidth, H=arena.offsetHeight;
+  let tpl;
+  if(G.phase>=4&&Math.random()<0.1) tpl=POLS[11];
+  else { const maxIdx=Math.min(10,2+G.phase); tpl=POLS[Math.floor(Math.random()*(maxIdx+1))]; }
+  const id=pid++;
+  const x=20+Math.random()*(W-90), y=35+Math.random()*(H-90);
+  const el=document.createElement('div');
+  el.className='politico'+(tpl.stealRate>=2?' dangerous':'');
+  el.id=`p${id}`; el.style.left=x+'px'; el.style.top=y+'px';
+  el.innerHTML=`
+    <div class="pol-sprite">${tpl.sprite}</div>
+    <div class="pol-name">${tpl.name}</div>
+    <div class="pol-role">${tpl.role}</div>
+    <div class="pol-rate">-€${tpl.stealRate}/s → ${SVC_NAMES[tpl.target].substring(0,3)}</div>
+  `;
+  arena.appendChild(el);
+  const pObj={id,el,tpl,x,y,alive:true,dragging:false};
+  G.politicians.push(pObj);
+  pObj.wt=setInterval(()=>{
+    if(!pObj.alive||pObj.dragging) return;
+    const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*50));
+    const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*35));
+    pObj.x=nx; pObj.y=ny;
+    el.style.transition='left 1.8s ease, top 1.8s ease';
+    el.style.left=nx+'px'; el.style.top=ny+'px';
+  },2200+Math.random()*1600);
+  setupDrag(pObj);
+  document.getElementById('drag-hint').style.display='none';
+}
+
+function setupDrag(p) {
+  p.el.addEventListener('mousedown', e=>{e.preventDefault();e.stopPropagation();beginDrag(p,e.clientX,e.clientY);});
+  p.el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();beginDrag(p,e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+}
+
+function beginDrag(p,cx,cy) {
+  if(!running||!p.alive||p.dragging) return;
+  p.dragging=true; p.el.classList.add('dragging');
+  p.el.style.transition='none'; p.el.style.zIndex=200;
+  const jail=document.getElementById('jail-panel');
+  const arena=document.getElementById('arena');
+  const startX=cx,startY=cy,ox=p.x,oy=p.y;
+
+  function move(mx,my) {
+    p.el.style.left=(ox+mx-startX)+'px';
+    p.el.style.top=(oy+my-startY)+'px';
+    const jRect=jail.getBoundingClientRect();
+    jail.classList.toggle('drop-target',mx>jRect.left-20);
+  }
+
+  function end(mx,my) {
+    document.removeEventListener('mousemove',mm);
+    document.removeEventListener('mouseup',mu);
+    document.removeEventListener('touchmove',tm);
+    document.removeEventListener('touchend',te);
+    jail.classList.remove('drop-target');
+    const jRect=jail.getBoundingClientRect();
+    const aRect=arena.getBoundingClientRect();
+    const isMobile=window.innerWidth<=600;
+    const overJail=mx>jRect.left-20;
+    const outsideArena=mx<aRect.left||mx>aRect.right||my<aRect.top||my>aRect.bottom;
+    if((isMobile?outsideArena:overJail)&&p.alive) {
+      tryArrest(p);
+    } else {
+      p.dragging=false; p.el.classList.remove('dragging');
+      p.el.style.transition='left 0.3s ease, top 0.3s ease';
+      p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.zIndex=10;
+    }
+  }
+
+  const mm=e=>move(e.clientX,e.clientY);
+  const mu=e=>end(e.clientX,e.clientY);
+  const tm=e=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);};
+  const te=e=>end(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+  document.addEventListener('mousemove',mm);
+  document.addEventListener('mouseup',mu);
+  document.addEventListener('touchmove',tm,{passive:false});
+  document.addEventListener('touchend',te);
+}
+
+function tryArrest(p) {
+  const occupied=G.jailCells.filter(Boolean).length;
+  if(occupied>=G.jailMax) {
+    p.dragging=false; p.el.classList.remove('dragging');
+    p.el.style.transition='left 0.3s ease, top 0.3s ease';
+    p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.zIndex=10;
+    showEvent('🔒 CÁRCEL LLENA — AMPLÍA O ESPERA');
+    const jp=document.getElementById('jail-panel');
+    jp.classList.add('overflow');
+    setTimeout(()=>jp.classList.remove('overflow'),1500);
+    return;
+  }
+  p.alive=false; p.dragging=false; clearInterval(p.wt);
+  p.el.style.transition='opacity 0.2s, transform 0.2s';
+  p.el.style.opacity='0'; p.el.style.transform='scale(0.4)';
+  setTimeout(()=>p.el.parentNode&&p.el.parentNode.removeChild(p.el),220);
+  G.politicians=G.politicians.filter(x=>x.id!==p.id);
+  G.arrested++;
+  document.getElementById('s-arrested').textContent=G.arrested;
+  playArrestSound();
+  const reward=Math.round(8+p.tpl.stealRate*6);
+  G.budget+=reward;
+  showEvent(`✅ ${p.tpl.name} DETENIDO +€${reward}`);
+  const jailTime=25+G.phase*4;
+  const cell={name:p.tpl.name,sprite:p.tpl.sprite,timeLeft:jailTime,maxTime:jailTime};
+  for(let i=0;i<G.jailMax;i++){if(!G.jailCells[i]){G.jailCells[i]=cell;break;}}
+  renderJailCells(); updateJailCount(); updateBudget();
+}
+
+function escapeFromJail(cell) {
+  showEvent(`⚠️ ${cell.name} HA ESCAPADO`);
+  const arena=document.getElementById('arena');
+  const W=arena.offsetWidth,H=arena.offsetHeight;
+  const tpl=POLS.find(t=>t.name===cell.name)||POLS[0];
+  const id=pid++;
+  const x=20+Math.random()*(W-90),y=35+Math.random()*(H-90);
+  const el=document.createElement('div');
+  el.className='politico'; el.id=`p${id}`;
+  el.style.left=x+'px'; el.style.top=y+'px';
+  el.innerHTML=`
+    <div class="pol-sprite">${tpl.sprite}</div>
+    <div class="pol-name">${tpl.name} 🔓</div>
+    <div class="pol-role">${tpl.role}</div>
+    <div class="pol-rate">-€${tpl.stealRate}/s → ${SVC_NAMES[tpl.target].substring(0,3)}</div>
+  `;
+  arena.appendChild(el);
+  const pObj={id,el,tpl,x,y,alive:true,dragging:false};
+  G.politicians.push(pObj);
+  pObj.wt=setInterval(()=>{
+    if(!pObj.alive||pObj.dragging) return;
+    const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*50));
+    const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*35));
+    pObj.x=nx; pObj.y=ny;
+    el.style.transition='left 1.8s ease, top 1.8s ease';
+    el.style.left=nx+'px'; el.style.top=ny+'px';
+  },2200+Math.random()*1600);
+  setupDrag(pObj);
+}
+
+function renderJailCells() {
+  const c=document.getElementById('jail-cells'); c.innerHTML='';
+  for(let i=0;i<G.jailMax;i++){
+    const cell=G.jailCells[i]||null;
+    const div=document.createElement('div');
+    div.className='jail-cell '+(cell?'occupied':'empty'); div.id=`jc${i}`;
+    if(cell){
+      const pct=(cell.timeLeft/cell.maxTime)*100;
+      if(pct<25) div.classList.add('escaping');
+      div.innerHTML=`
+        <div class="prisoner-sprite">${cell.sprite}</div>
+        <div class="prisoner-name">${cell.name}</div>
+        <div class="timer-bar-bg"><div class="timer-bar-fill" id="jt${i}" style="width:${pct}%"></div></div>
+      `;
+    }
+    c.appendChild(div);
+  }
+}
+
+function updateJailTimers() {
+  G.jailCells.forEach((cell,i)=>{
+    if(!cell) return;
+    const pct=(cell.timeLeft/cell.maxTime)*100;
+    const bar=document.getElementById(`jt${i}`);
+    const cel=document.getElementById(`jc${i}`);
+    if(bar) bar.style.width=pct+'%';
+    if(cel) cel.classList.toggle('escaping',pct<25);
+  });
+}
+
+function updateJailCount() {
+  const n=G.jailCells.filter(Boolean).length;
+  document.getElementById('jail-counter').textContent=`${n}/${G.jailMax}`;
+}
+
+function upgradeJail() {
+  if(G.budget<G.upgradeCost){showEvent('💸 FONDOS INSUFICIENTES');return;}
+  G.budget-=G.upgradeCost; G.jailMax+=2; G.jailCells.push(null,null);
+  G.upgradeCost=Math.floor(G.upgradeCost*1.55);
+  document.getElementById('upgrade-cost').textContent=G.upgradeCost;
+  renderJailCells(); updateJailCount(); updateBudget();
+}
+
+function distribute(svc) {
+  if(!running||G.budget<15||G[svc]>=100) return;
+  G.budget-=15; G[svc]=Math.min(100,G[svc]+20);
+  updateServices(); updateBudget();
+}
+
+let audioCtx=null;
+function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+
+function playArrestSound(){
+  try{
+    const ctx=getAudio(),t=ctx.currentTime;
+    const o1=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain();
+    o1.type='square';o1.frequency.setValueAtTime(280,t);o1.frequency.exponentialRampToValueAtTime(80,t+0.12);
+    o2.type='sawtooth';o2.frequency.setValueAtTime(420,t);o2.frequency.exponentialRampToValueAtTime(60,t+0.1);
+    g.gain.setValueAtTime(0.18,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+    o1.connect(g);o2.connect(g);g.connect(ctx.destination);
+    o1.start(t);o1.stop(t+0.25);o2.start(t);o2.stop(t+0.25);
+  }catch(e){}
+}
+
+function playElectionSound(){
+  try{
+    const ctx=getAudio(),t=ctx.currentTime;
+    [440,550,660].forEach((freq,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.value=freq;
+      g.gain.setValueAtTime(0,t+i*0.1);g.gain.linearRampToValueAtTime(0.12,t+i*0.1+0.05);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.3);
+      o.connect(g);g.connect(ctx.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.3);
+    });
+  }catch(e){}
+}
+
+function playElectionWinSound(){
+  try{
+    const ctx=getAudio(),t=ctx.currentTime;
+    [523,659,784,1047].forEach((freq,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.value=freq;
+      g.gain.setValueAtTime(0.15,t+i*0.1);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.35);
+      o.connect(g);g.connect(ctx.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.35);
+    });
+  }catch(e){}
+}
+
+function playElectionLoseSound(){
+  try{
+    const ctx=getAudio(),t=ctx.currentTime;
+    [300,220,180].forEach((freq,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sawtooth';o.frequency.value=freq;
+      g.gain.setValueAtTime(0.12,t+i*0.15);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+0.4);
+      o.connect(g);g.connect(ctx.destination);o.start(t+i*0.15);o.stop(t+i*0.15+0.4);
+    });
+  }catch(e){}
+}
+
+function showStealFloat(p,txt){
+  if(!p.el||!p.el.parentNode) return;
+  const f=document.createElement('div');
+  f.className='pol-steal-indicator';f.textContent=txt;
+  p.el.appendChild(f);
+  setTimeout(()=>{if(f.parentNode)f.parentNode.removeChild(f);},600);
+}
+
+function flashSvc(svc){
+  const el=document.getElementById(`svc-${svc}`);
+  el.classList.add('under-attack');
+  setTimeout(()=>el.classList.remove('under-attack'),600);
+}
+
+function showEvent(msg){
+  const b=document.getElementById('event-banner');
+  b.textContent=msg;b.style.display='block';
+  clearTimeout(T.banner);
+  T.banner=setTimeout(()=>{b.style.display='none';},2800);
+}
+
+function updateAll(){updateHUD();updateServices();updateBudget();updateJailCount();}
+
+function updateHUD(){
+  const t=G.time,mm=String(Math.floor(t/60)).padStart(2,'0'),ss=String(t%60).padStart(2,'0');
+  document.getElementById('s-time').textContent=mm+':'+ss;
+  document.getElementById('s-arrested').textContent=G.arrested;
+  document.getElementById('s-stolen').textContent='€'+Math.floor(G.stolen);
   const r=G.record;
-  document.getElementById('go-record').textContent = `RÉCORD: ${String(Math.floor(r/60)).padStart(2,'0')}:${String(r%60).padStart(2,'0')}`;
+  if(r>0) document.getElementById('s-record').textContent=String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0');
+  document.getElementById('penalty-indicator').classList.toggle('active',G.popularityPenalty>0);
+}
+
+function updateServices(){
+  ['edu','san','jus'].forEach(s=>{
+    const v=Math.max(0,Math.min(100,G[s]));
+    document.getElementById(`bar-${s}`).style.width=v+'%';
+    document.getElementById(`pct-${s}`).textContent=Math.floor(v)+'%';
+    const card=document.getElementById(`svc-${s}`);
+    card.classList.remove('warning','critical','under-attack');
+    if(v<20) card.classList.add('critical');
+    else if(v<40) card.classList.add('warning');
+    document.getElementById(`btn-${s}`).disabled=(v>=100||G.budget<15);
+  });
+}
+
+function updateBudget(){
+  document.getElementById('budget-amount').textContent='€'+Math.floor(G.budget);
+  document.getElementById('jail-upgrade-btn').disabled=G.budget<G.upgradeCost;
+  ['edu','san','jus'].forEach(s=>{
+    document.getElementById(`btn-${s}`).disabled=(G[s]>=100||G.budget<15);
+  });
+}
+
+function checkDefeat(){
+  const col=['edu','san','jus'].find(s=>G[s]<=0);
+  if(!col) return;
+  running=false; stopLoops();
+  if(G.time>G.record){G.record=G.time;localStorage.setItem('cap_rec',G.time);}
+  const mm=String(Math.floor(G.time/60)).padStart(2,'0'),ss=String(G.time%60).padStart(2,'0');
+  document.getElementById('go-msg').innerHTML=`${SVC_NAMES[col]} ha colapsado.<br>Los corruptos ganaron esta vez.`;
+  document.getElementById('go-stats').innerHTML=`Tiempo: ${mm}:${ss}<br>Detenidos: ${G.arrested} | Robado: €${Math.floor(G.stolen)}`;
+  const r=G.record;
+  document.getElementById('go-record').textContent=`RÉCORD: ${String(Math.floor(r/60)).padStart(2,'0')}:${String(r%60).padStart(2,'0')}`;
   document.getElementById('gameover-screen').classList.add('active');
 }
 </script>
