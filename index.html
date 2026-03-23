@@ -104,6 +104,21 @@ body::after {
 .svc-bar-fill.jus { background:var(--purple); box-shadow:0 0 5px var(--purple); }
 .svc-pct { font-size:8px; color:var(--text); flex-shrink:0; min-width:32px; text-align:right; }
 
+/* CORRUPTION */
+.svc-corrupt-row { display:flex; align-items:center; gap:5px; }
+.svc-corrupt-label { font-size:4px; color:var(--orange); white-space:nowrap; flex-shrink:0; }
+.svc-corrupt-bg { flex:1; height:4px; background:#1a1a1a; border:1px solid #333; }
+.svc-corrupt-fill { height:100%; background:var(--orange); box-shadow:0 0 4px var(--orange); transition:width 0.5s; }
+.svc.corrupted .svc-corrupt-fill { background:var(--red); box-shadow:0 0 6px var(--red); }
+.clean-btn {
+  background:transparent; border:1px solid var(--orange);
+  color:var(--orange); font-family:'Press Start 2P',monospace;
+  font-size:4px; padding:3px 5px; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  transition:all 0.1s;
+}
+.clean-btn:hover:not(:disabled) { background:var(--orange); color:#000; }
+.clean-btn:disabled { opacity:0.25; cursor:not-allowed; }
+
 /* MAIN AREA */
 #main {
   flex:1;
@@ -259,8 +274,8 @@ body::after {
   justify-content:center;
   gap:3px;
 }
-.jail-cell.empty { opacity:0.2; }
-.jail-cell.empty::after { content:'🔒'; font-size:14px; }
+.jail-cell.empty { opacity:0.18; background: repeating-linear-gradient(45deg,#110e05,#110e05 4px,#161005 4px,#161005 8px); }
+.jail-cell.empty::before { content:''; display:block; width:60%; height:2px; background:var(--jail-border); border-radius:1px; }
 .jail-cell .prisoner-sprite { font-size:20px; }
 .jail-cell .prisoner-name { font-size:4px; color:var(--yellow); text-align:center; width:100%; padding:0 3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .jail-cell .timer-bar-bg { width:80%; height:3px; background:#222; }
@@ -362,7 +377,7 @@ body::after {
   .jail-cell { aspect-ratio:1; }
   .jail-cell .prisoner-sprite { font-size:16px; }
   .jail-cell .prisoner-name { font-size:3px; }
-  .jail-cell.empty::after { font-size:11px; }
+  .jail-cell.empty::before { width:50%; }
 
   /* Budget bar stacks on mobile */
   #budget-bar {
@@ -439,6 +454,56 @@ body::after {
   padding:10px 20px; z-index:500; text-align:center;
   border:2px solid #ff6680; white-space:nowrap;
 }
+
+/* ELECTION OVERLAY */
+#election-overlay {
+  display:none; position:fixed;
+  inset:0; z-index:400;
+  pointer-events:none;
+}
+#election-overlay.active { display:block; }
+
+#election-box {
+  position:absolute;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  background:rgba(0,0,0,0.92);
+  border:3px solid var(--yellow);
+  box-shadow:0 0 40px rgba(255,215,0,0.3);
+  padding:20px 28px;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  pointer-events:none;
+  animation:election-appear 0.3s ease;
+}
+@keyframes election-appear {
+  from { transform:translate(-50%,-50%) scale(0.8); opacity:0; }
+  to   { transform:translate(-50%,-50%) scale(1);   opacity:1; }
+}
+
+#election-title { font-size:11px; color:var(--yellow); text-shadow:0 0 14px var(--yellow); letter-spacing:2px; }
+#election-subtitle { font-size:6px; color:var(--text); text-align:center; line-height:2; }
+#election-timer-row { display:flex; align-items:center; gap:10px; }
+#election-timer-label { font-size:6px; color:var(--dim); }
+#election-timer { font-size:20px; color:var(--red); text-shadow:0 0 10px var(--red); min-width:28px; text-align:center; }
+
+#election-services { display:flex; gap:12px; }
+.elec-svc {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  font-size:6px; color:var(--dim); padding:8px 12px;
+  border:1px solid var(--border);
+  transition:all 0.2s;
+}
+.elec-svc .elec-icon { font-size:18px; }
+.elec-svc.ok { border-color:var(--green); color:var(--green); box-shadow:0 0 8px rgba(57,255,20,0.3); }
+.elec-svc:not(.ok) { border-color:var(--red); color:var(--red); }
+
+#penalty-indicator {
+  position:fixed; top:0; left:0; right:0; height:3px;
+  background:var(--red); z-index:300;
+  display:none;
+  animation:penalty-pulse 1s ease-in-out infinite;
+}
+#penalty-indicator.active { display:block; }
+@keyframes penalty-pulse { 50%{ opacity:0.4; } }
 </style>
 </head>
 <body>
@@ -449,8 +514,8 @@ body::after {
   <div class="start-rule">
     Los <span>políticos corruptos</span> saquean los servicios públicos.<br>
     <span>Arrástralos a la cárcel</span> antes de que todo colapse.<br><br>
-    La cárcel tiene capacidad limitada — <span>amplíala</span> con presupuesto.<br>
-    Los presos <span>escapan con el tiempo</span> si no pagas su mantenimiento.<br><br>
+    Cada 90 segundos llegan las <span>🗳️ ELECCIONES</span>.<br>
+    Necesitas ≥50% en al menos 2 servicios — si no, <span>recortes de income</span> durante 30s.<br><br>
     Si <span>Educación, Sanidad o Justicia</span> llegan a 0… has perdido.
   </div>
   <button id="start-btn" onclick="startGame()">▶ COMENZAR</button>
@@ -465,6 +530,26 @@ body::after {
 </div>
 
 <div id="event-banner"></div>
+
+<!-- ELECTION OVERLAY -->
+<div id="election-overlay">
+  <div id="election-box">
+    <div id="election-title">🗳️ ELECCIONES</div>
+    <div id="election-subtitle">Necesitas ≥50% en al menos 2 servicios<br>para ganar el apoyo ciudadano</div>
+    <div id="election-timer-row">
+      <span id="election-timer-label">TIEMPO</span>
+      <span id="election-timer">12</span>
+    </div>
+    <div id="election-services">
+      <div class="elec-svc" id="elec-edu"><div class="elec-icon">📚</div>EDU</div>
+      <div class="elec-svc" id="elec-san"><div class="elec-icon">🏥</div>SAN</div>
+      <div class="elec-svc" id="elec-jus"><div class="elec-icon">⚖️</div>JUS</div>
+    </div>
+  </div>
+</div>
+
+<!-- PENALTY INDICATOR -->
+<div id="penalty-indicator"></div>
 
 <div id="game-root">
   <div id="topbar">
@@ -483,6 +568,11 @@ body::after {
       <div class="svc-info">
         <div class="svc-name">EDUCACIÓN</div>
         <div class="svc-bar-bg"><div class="svc-bar-fill edu" id="bar-edu" style="width:80%"></div></div>
+        <div class="svc-corrupt-row">
+          <span class="svc-corrupt-label">CORRUPCIÓN</span>
+          <div class="svc-corrupt-bg"><div class="svc-corrupt-fill" id="crp-edu" style="width:0%"></div></div>
+          <button class="clean-btn" id="clean-edu" onclick="cleanService('edu')">LIMPIAR €20</button>
+        </div>
       </div>
       <div class="svc-pct" id="pct-edu">80%</div>
     </div>
@@ -491,6 +581,11 @@ body::after {
       <div class="svc-info">
         <div class="svc-name">SANIDAD</div>
         <div class="svc-bar-bg"><div class="svc-bar-fill san" id="bar-san" style="width:80%"></div></div>
+        <div class="svc-corrupt-row">
+          <span class="svc-corrupt-label">CORRUPCIÓN</span>
+          <div class="svc-corrupt-bg"><div class="svc-corrupt-fill" id="crp-san" style="width:0%"></div></div>
+          <button class="clean-btn" id="clean-san" onclick="cleanService('san')">LIMPIAR €20</button>
+        </div>
       </div>
       <div class="svc-pct" id="pct-san">80%</div>
     </div>
@@ -499,6 +594,11 @@ body::after {
       <div class="svc-info">
         <div class="svc-name">JUSTICIA</div>
         <div class="svc-bar-bg"><div class="svc-bar-fill jus" id="bar-jus" style="width:80%"></div></div>
+        <div class="svc-corrupt-row">
+          <span class="svc-corrupt-label">CORRUPCIÓN</span>
+          <div class="svc-corrupt-bg"><div class="svc-corrupt-fill" id="crp-jus" style="width:0%"></div></div>
+          <button class="clean-btn" id="clean-jus" onclick="cleanService('jus')">LIMPIAR €20</button>
+        </div>
       </div>
       <div class="svc-pct" id="pct-jus">80%</div>
     </div>
@@ -566,17 +666,22 @@ let pid = 0;
 function freshState() {
   return {
     edu:80, san:80, jus:80,
-    budget: 25,       // more generous start
+    corruptEdu:0, corruptSan:0, corruptJus:0,
+    budget: 25,
     collected: 0,
     stolen: 0,
     arrested: 0,
     time: 0,
     phase: 1,
-    jailMax: 4,       // start with 4 cells
+    jailMax: 4,
     jailCells: new Array(4).fill(null),
     politicians: [],
     record: parseInt(localStorage.getItem('hx3_rec')||'0'),
     upgradeCost: 35,
+    nextElection: 90,      // first election at 90s
+    electionActive: false,
+    electionTimeLeft: 0,
+    popularityPenalty: 0,  // seconds remaining of income penalty
   };
 }
 
@@ -624,6 +729,13 @@ function mainTick() {
   if (!running) return;
   G.time++;
   checkPhase();
+  checkElection();
+  if (G.electionActive) {
+    G.electionTimeLeft--;
+    updateElectionHUD();
+    if (G.electionTimeLeft <= 0) resolveElection();
+  }
+  if (G.popularityPenalty > 0) G.popularityPenalty--;
   updateHUD();
   checkDefeat();
 }
@@ -632,7 +744,8 @@ function incomeTick() {
   if (!running) return;
   const base = 7 + G.phase * 2;
   const earlyBonus = G.time < 60 ? 5 : 0;
-  const inc = base + earlyBonus;
+  const penaltyMult = G.popularityPenalty > 0 ? 0.4 : 1; // 60% income cut during penalty
+  const inc = (base + earlyBonus) * penaltyMult;
   G.budget += inc;
   G.collected += inc;
   updateBudget();
@@ -645,6 +758,13 @@ function stealTick() {
     const rate = p.tpl.stealRate * (1 + (G.phase-1)*0.12);
     G[p.tpl.target] = Math.max(0, G[p.tpl.target] - rate);
     G.stolen += rate;
+    // Accumulate corruption on target service
+    const ck = 'corrupt' + p.tpl.target.charAt(0).toUpperCase() + p.tpl.target.slice(1);
+    G[ck] = Math.min(100, G[ck] + rate * 0.4);
+    // If corrupted >50%, service also drains on its own
+    if (G[ck] >= 50) {
+      G[p.tpl.target] = Math.max(0, G[p.tpl.target] - 0.3);
+    }
     showStealFloat(p, `-€${rate.toFixed(1)}`);
     flashSvc(p.tpl.target);
     updateServices();
@@ -653,14 +773,8 @@ function stealTick() {
 
 function jailTick() {
   if (!running) return;
-  const prisonerCount = G.jailCells.filter(Boolean).length;
-  // €2 per prisoner per 4s — light maintenance, noticeable but not punishing
-  const maint = prisonerCount * 2;
-  if (maint > 0) {
-    G.budget = Math.max(0, G.budget - maint);
-    updateBudget();
-  }
-  document.getElementById('maintenance-cost').textContent = maint;
+  // No maintenance cost — escape mechanic is punishment enough
+  document.getElementById('maintenance-cost').textContent = 0;
 
   let changed = false;
   G.jailCells = G.jailCells.map(cell => {
@@ -694,8 +808,104 @@ function checkPhase() {
 }
 
 // ══════════════════════════════════════════
-// SPAWN
+// ELECTIONS
 // ══════════════════════════════════════════
+function checkElection() {
+  if (G.electionActive) return;
+  if (G.time >= G.nextElection) triggerElection();
+}
+
+function triggerElection() {
+  G.electionActive = true;
+  G.electionTimeLeft = 12; // 12 seconds to pass
+  document.getElementById('election-overlay').classList.add('active');
+  updateElectionHUD();
+  playElectionSound();
+}
+
+function updateElectionHUD() {
+  document.getElementById('election-timer').textContent = G.electionTimeLeft;
+  // Show which services need to be above 50%
+  ['edu','san','jus'].forEach(s => {
+    const ok = G[s] >= 50;
+    const el = document.getElementById(`elec-${s}`);
+    if (el) el.classList.toggle('ok', ok);
+  });
+}
+
+function resolveElection() {
+  G.electionActive = false;
+  document.getElementById('election-overlay').classList.remove('active');
+
+  const passing = ['edu','san','jus'].filter(s => G[s] >= 50).length;
+  G.nextElection = G.time + 90; // next election in 90s
+
+  if (passing >= 2) {
+    // Win — bonus income
+    const bonus = 25 + passing * 10;
+    G.budget += bonus;
+    updateBudget();
+    showEvent(`🗳️ ELECCIONES GANADAS +€${bonus}`);
+    playElectionWinSound();
+  } else {
+    // Lose — income penalty for 30s
+    G.popularityPenalty = 30;
+    showEvent('🗳️ ELECCIONES PERDIDAS — RECORTES 30s');
+    playElectionLoseSound();
+  }
+}
+
+function playElectionSound() {
+  try {
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    [440, 550, 660].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, t + i*0.1);
+      g.gain.linearRampToValueAtTime(0.12, t + i*0.1 + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, t + i*0.1 + 0.3);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t + i*0.1); o.stop(t + i*0.1 + 0.3);
+    });
+  } catch(e) {}
+}
+
+function playElectionWinSound() {
+  try {
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    [523, 659, 784, 1047].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.15, t + i*0.1);
+      g.gain.exponentialRampToValueAtTime(0.001, t + i*0.1 + 0.35);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t + i*0.1); o.stop(t + i*0.1 + 0.35);
+    });
+  } catch(e) {}
+}
+
+function playElectionLoseSound() {
+  try {
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    [300, 220, 180].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.12, t + i*0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, t + i*0.15 + 0.4);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t + i*0.15); o.stop(t + i*0.15 + 0.4);
+    });
+  } catch(e) {}
+}
 function spawnPol() {
   const arena = document.getElementById('arena');
   const W = arena.offsetWidth;
@@ -748,27 +958,32 @@ function spawnPol() {
 }
 
 // ══════════════════════════════════════════
-// DRAG
+// DRAG — fixed for mobile
 // ══════════════════════════════════════════
 function setupDrag(p) {
-  p.el.addEventListener('mousedown',  e => { e.preventDefault(); beginDrag(p, e.clientX, e.clientY); });
-  p.el.addEventListener('touchstart', e => { e.preventDefault(); beginDrag(p, e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  p.el.addEventListener('mousedown',  e => { e.preventDefault(); e.stopPropagation(); beginDrag(p, e.clientX, e.clientY); });
+  p.el.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); beginDrag(p, e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
 }
 
 function beginDrag(p, cx, cy) {
-  if (!running || !p.alive) return;
+  if (!running || !p.alive || p.dragging) return;
   p.dragging = true;
   p.el.classList.add('dragging');
   p.el.style.transition = 'none';
   p.el.style.zIndex = 200;
 
   const jail = document.getElementById('jail-panel');
+  const arena = document.getElementById('arena');
+  const arenaRect = arena.getBoundingClientRect();
   const startX = cx, startY = cy;
   const ox = p.x, oy = p.y;
 
   function move(mx, my) {
-    p.el.style.left = (ox + mx - startX) + 'px';
-    p.el.style.top  = (oy + my - startY) + 'px';
+    // Position relative to arena
+    const nx = ox + (mx - startX);
+    const ny = oy + (my - startY);
+    p.el.style.left = nx + 'px';
+    p.el.style.top  = ny + 'px';
     const jRect = jail.getBoundingClientRect();
     jail.classList.toggle('drop-target', mx > jRect.left - 20);
   }
@@ -787,8 +1002,8 @@ function beginDrag(p, cx, cy) {
       p.dragging = false;
       p.el.classList.remove('dragging');
       p.el.style.transition = 'left 0.3s ease, top 0.3s ease';
-      p.el.style.left = p.x+'px';
-      p.el.style.top  = p.y+'px';
+      p.el.style.left = p.x + 'px';
+      p.el.style.top  = p.y + 'px';
       p.el.style.zIndex = 10;
     }
   }
@@ -834,7 +1049,10 @@ function tryArrest(p) {
   G.arrested++;
   document.getElementById('s-arrested').textContent = G.arrested;
 
-  // Arrest reward — recover some of what they were stealing
+  // Sound
+  playArrestSound();
+
+  // Arrest reward
   const reward = Math.round(8 + p.tpl.stealRate * 6);
   G.budget += reward;
   showEvent(`✅ ${p.tpl.name} DETENIDO +€${reward}`);
@@ -951,8 +1169,57 @@ function distribute(svc) {
 }
 
 // ══════════════════════════════════════════
-// FEEDBACK
+// AUDIO
 // ══════════════════════════════════════════
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playArrestSound() {
+  try {
+    const ctx = getAudio();
+    // Short metallic clank — cell door slamming
+    const t = ctx.currentTime;
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc1.type = 'square';
+    osc1.frequency.setValueAtTime(280, t);
+    osc1.frequency.exponentialRampToValueAtTime(80, t + 0.12);
+
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(420, t);
+    osc2.frequency.exponentialRampToValueAtTime(60, t + 0.1);
+
+    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start(t); osc1.stop(t + 0.25);
+    osc2.start(t); osc2.stop(t + 0.25);
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+// CLEAN CORRUPTION
+// ══════════════════════════════════════════
+function cleanService(svc) {
+  if (!running) return;
+  const cost = 20;
+  if (G.budget < cost) return;
+  const ck = 'corrupt' + svc.charAt(0).toUpperCase() + svc.slice(1);
+  if (G[ck] <= 0) return;
+  G.budget -= cost;
+  G[ck] = Math.max(0, G[ck] - 40);
+  updateServices();
+  updateBudget();
+}
 function showStealFloat(p, txt) {
   if (!p.el || !p.el.parentNode) return;
   const f = document.createElement('div');
@@ -988,6 +1255,8 @@ function updateHUD() {
   document.getElementById('s-stolen').textContent = '€'+Math.floor(G.stolen);
   const r=G.record;
   if(r>0) document.getElementById('s-record').textContent = String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0');
+  // Penalty bar
+  document.getElementById('penalty-indicator').classList.toggle('active', G.popularityPenalty > 0);
 }
 
 function updateServices() {
@@ -996,10 +1265,19 @@ function updateServices() {
     document.getElementById(`bar-${s}`).style.width = v+'%';
     document.getElementById(`pct-${s}`).textContent = Math.floor(v)+'%';
     const card = document.getElementById(`svc-${s}`);
-    card.classList.remove('warning','critical');
+    card.classList.remove('warning','critical','under-attack');
     if (v<20) card.classList.add('critical');
     else if (v<40) card.classList.add('warning');
     document.getElementById(`btn-${s}`).disabled = (v>=100 || G.budget<15);
+
+    // Corruption bar
+    const ck = 'corrupt' + s.charAt(0).toUpperCase() + s.slice(1);
+    const cv = Math.max(0, Math.min(100, G[ck]||0));
+    const crpEl = document.getElementById(`crp-${s}`);
+    if (crpEl) crpEl.style.width = cv+'%';
+    const cleanBtn = document.getElementById(`clean-${s}`);
+    if (cleanBtn) cleanBtn.disabled = (cv <= 0 || G.budget < 20);
+    card.classList.toggle('corrupted', cv >= 50);
   });
 }
 
