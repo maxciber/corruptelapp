@@ -27,6 +27,9 @@ body::after {
 
 #topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; border-bottom:2px solid var(--border); flex-shrink:0; background:var(--panel); gap:8px; }
 #game-title { font-size:13px; color:var(--green); text-shadow:0 0 12px var(--green); letter-spacing:2px; white-space:nowrap; }
+#mute-btn { background:transparent; border:1px solid var(--border); color:var(--dim); font-family:'Press Start 2P',monospace; font-size:8px; padding:4px 8px; cursor:pointer; flex-shrink:0; transition:all 0.1s; }
+#mute-btn:hover { border-color:var(--text); color:var(--text); }
+#mute-btn.muted { color:var(--red); border-color:var(--red); }
 #topstats { display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end; }
 .tstat { font-size:7px; color:var(--dim); display:flex; flex-direction:column; align-items:center; gap:3px; }
 .tstat b { font-size:9px; color:var(--yellow); }
@@ -52,6 +55,7 @@ body::after {
 #arena-label { position:absolute; top:8px; left:10px; font-size:6px; color:var(--dim); letter-spacing:1px; z-index:2; pointer-events:none; }
 #arena { width:100%; height:100%; position:relative; background: repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px), repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px); cursor:default; }
 #drag-hint { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); font-size:6px; color:var(--dim); letter-spacing:1px; pointer-events:none; white-space:nowrap; }
+#attack-canvas { position:absolute; inset:0; pointer-events:none; z-index:5; }
 
 /* POLITICIAN — spawn animation */
 .politico { position:absolute; display:flex; flex-direction:column; align-items:center; cursor:grab; z-index:10; touch-action:none; padding:4px; animation:pol-spawn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
@@ -256,6 +260,7 @@ body::after {
       <div class="tstat">ROBADO<b id="s-stolen">€0</b></div>
       <div class="tstat">RÉCORD<b id="s-record">--:--</b></div>
     </div>
+    <button id="mute-btn" onclick="toggleMute()">🔊</button>
   </div>
   <div id="services-row">
     <div class="svc" id="svc-edu"><div class="svc-icon">📚</div><div class="svc-info"><div class="svc-name">EDUCACIÓN</div><div class="svc-bar-bg"><div class="svc-bar-fill edu" id="bar-edu" style="width:80%"></div></div></div><div class="svc-pct" id="pct-edu">80%</div></div>
@@ -265,6 +270,7 @@ body::after {
   <div id="main">
     <div id="arena-wrap">
       <div id="arena-label">▸ ARRASTRA LOS CORRUPTOS A LA CÁRCEL</div>
+      <canvas id="attack-canvas"></canvas>
       <div id="arena"></div>
       <div id="drag-hint">AGARRA Y ARRASTRA ▶</div>
     </div>
@@ -332,6 +338,7 @@ function startGame() {
   document.getElementById('start-screen').style.display='none';
   G=freshState(); running=true;
   renderJailCells(); updateAll(); startLoops();
+  startMusic(); drawAttackLines();
 }
 
 function restartGame() {
@@ -341,6 +348,7 @@ function restartGame() {
   document.getElementById('arena').innerHTML='';
   G=freshState(); running=true;
   renderJailCells(); updateAll(); startLoops();
+  if(!musicStarted) startMusic();
 }
 
 function stopLoops() {
@@ -407,7 +415,7 @@ function doSpawn() {
 
 function checkPhase() {
   const np=Math.min(6,1+Math.floor(G.time/45));
-  if(np!==G.phase){ G.phase=np; showLevelSplash(np); }
+  if(np!==G.phase){ G.phase=np; showLevelSplash(np); updateMusicIntensity(); }
 }
 
 function showLevelSplash(phase) {
@@ -465,12 +473,14 @@ function spawnPol() {
   G.politicians.push(pObj);
   pObj.wt=setInterval(()=>{
     if(!pObj.alive||pObj.dragging) return;
-    const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*50));
-    const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*35));
+    const speed = 40 + G.phase * 18;  // moves faster each phase
+    const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*speed));
+    const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*speed*0.7));
     pObj.x=nx; pObj.y=ny;
-    el.style.transition='left 1.8s ease, top 1.8s ease';
+    const duration = Math.max(0.6, 1.8 - G.phase * 0.2); // transition faster too
+    el.style.transition=`left ${duration}s ease, top ${duration}s ease`;
     el.style.left=nx+'px'; el.style.top=ny+'px';
-  },2200+Math.random()*1600);
+  }, Math.max(800, 2200 - G.phase * 200) + Math.random()*800);
   setupDrag(pObj);
   document.getElementById('drag-hint').style.display='none';
 }
@@ -513,6 +523,7 @@ function tryArrest(p) {
     p.el.style.transition='left 0.3s ease, top 0.3s ease';
     p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.zIndex=10;
     showEvent('🔒 CÁRCEL LLENA — AMPLÍA O ESPERA');
+    if(navigator.vibrate) navigator.vibrate([80,40,80]);
     const jp=document.getElementById('jail-panel');
     jp.classList.add('overflow'); setTimeout(()=>jp.classList.remove('overflow'),1500);
     return;
@@ -523,6 +534,7 @@ function tryArrest(p) {
   G.politicians=G.politicians.filter(x=>x.id!==p.id);
   G.arrested++; document.getElementById('s-arrested').textContent=G.arrested;
   playArrestSound();
+  if(navigator.vibrate) navigator.vibrate(50);
   const reward=Math.round(8+p.tpl.stealRate*6); G.budget+=reward;
   showEvent(`✅ ${p.tpl.name} DETENIDO +€${reward}`);
   const cell={name:p.tpl.name,sprite:p.tpl.sprite,timeLeft:25+G.phase*4,maxTime:25+G.phase*4};
@@ -532,6 +544,7 @@ function tryArrest(p) {
 
 function escapeFromJail(cell) {
   showEvent(`⚠️ ${cell.name} HA ESCAPADO`);
+  if(navigator.vibrate) navigator.vibrate(150);
   const arena=document.getElementById('arena'), W=arena.offsetWidth, H=arena.offsetHeight;
   const tpl=POLS.find(t=>t.name===cell.name)||POLS[0];
   const id=pid++, x=20+Math.random()*(W-90), y=35+Math.random()*(H-90);
@@ -543,11 +556,14 @@ function escapeFromJail(cell) {
   G.politicians.push(pObj);
   pObj.wt=setInterval(()=>{
     if(!pObj.alive||pObj.dragging) return;
-    const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*50));
-    const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*35));
-    pObj.x=nx; pObj.y=ny; el.style.transition='left 1.8s ease, top 1.8s ease';
+    const speed = 40 + G.phase * 18;
+    const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*speed));
+    const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*speed*0.7));
+    pObj.x=nx; pObj.y=ny;
+    const duration = Math.max(0.6, 1.8 - G.phase * 0.2);
+    el.style.transition=`left ${duration}s ease, top ${duration}s ease`;
     el.style.left=nx+'px'; el.style.top=ny+'px';
-  },2200+Math.random()*1600);
+  },Math.max(800, 2200 - G.phase * 200)+Math.random()*800);
   setupDrag(pObj);
 }
 
@@ -646,6 +662,88 @@ function playElectionLoseSound(){
     const ctx=getAudio(),t=ctx.currentTime;
     [300,220,180].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.setValueAtTime(0.12,t+i*0.15);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+0.4);o.connect(g);g.connect(ctx.destination);o.start(t+i*0.15);o.stop(t+i*0.15+0.4);});
   }catch(e){}
+}
+
+// ── ATTACK LINES ──
+let animFrame=null;
+function drawAttackLines() {
+  const canvas=document.getElementById('attack-canvas');
+  if(!canvas){animFrame=requestAnimationFrame(drawAttackLines);return;}
+  const wrap=document.getElementById('arena-wrap');
+  canvas.width=wrap.offsetWidth; canvas.height=wrap.offsetHeight;
+  const ctx2=canvas.getContext('2d');
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
+  if(running) {
+    const ar=wrap.getBoundingClientRect();
+    G.politicians.forEach(p=>{
+      if(!p.alive||p.dragging||!p.el.parentNode) return;
+      const svcEl=document.getElementById(`svc-${p.tpl.target}`);
+      if(!svcEl) return;
+      const pr=p.el.getBoundingClientRect(), sr=svcEl.getBoundingClientRect();
+      const px=pr.left+pr.width/2-ar.left, py=pr.top+pr.height/2-ar.top;
+      const tx=sr.left+sr.width/2-ar.left, ty=sr.top+sr.height/2-ar.top;
+      const colors={edu:'rgba(0,207,255,0.3)',san:'rgba(57,255,20,0.3)',jus:'rgba(204,68,255,0.3)'};
+      ctx2.save();
+      ctx2.setLineDash([4,8]);
+      ctx2.lineDashOffset=-(Date.now()/50)%12;
+      ctx2.strokeStyle=colors[p.tpl.target]||'rgba(255,80,80,0.3)';
+      ctx2.lineWidth=1.5;
+      ctx2.beginPath(); ctx2.moveTo(px,py); ctx2.lineTo(tx,ty); ctx2.stroke();
+      ctx2.restore();
+    });
+  }
+  animFrame=requestAnimationFrame(drawAttackLines);
+}
+
+// ── BACKGROUND MUSIC ──
+let musicNodes=null, muted=false, musicStarted=false;
+
+function startMusic() {
+  if(musicStarted||muted) return;
+  musicStarted=true;
+  try {
+    const ctx=getAudio();
+    const master=ctx.createGain(); master.gain.value=0.05; master.connect(ctx.destination);
+    // Bass drone
+    const bass=ctx.createOscillator(); bass.type='sawtooth'; bass.frequency.value=55;
+    const bassF=ctx.createBiquadFilter(); bassF.type='lowpass'; bassF.frequency.value=110;
+    const bassG=ctx.createGain(); bassG.gain.value=0.5;
+    bass.connect(bassF); bassF.connect(bassG); bassG.connect(master); bass.start();
+    // Mid pulse with LFO
+    const mid=ctx.createOscillator(); mid.type='square'; mid.frequency.value=110;
+    const midG=ctx.createGain(); midG.gain.value=0;
+    const lfo=ctx.createOscillator(); lfo.frequency.value=0.4;
+    const lfoG=ctx.createGain(); lfoG.gain.value=0.12;
+    lfo.connect(lfoG); lfoG.connect(midG.gain);
+    mid.connect(midG); midG.connect(master); mid.start(); lfo.start();
+    // High shimmer
+    const hi=ctx.createOscillator(); hi.type='sine'; hi.frequency.value=440;
+    const hiG=ctx.createGain(); hiG.gain.value=0;
+    const lfo2=ctx.createOscillator(); lfo2.frequency.value=0.13;
+    const lfo2G=ctx.createGain(); lfo2G.gain.value=0.03;
+    lfo2.connect(lfo2G); lfo2G.connect(hiG.gain);
+    hi.connect(hiG); hiG.connect(master); hi.start(); lfo2.start();
+    musicNodes={master,lfoG,lfo2G};
+  } catch(e){}
+}
+
+function updateMusicIntensity() {
+  if(!musicNodes||muted) return;
+  try {
+    const intensity=Math.min(1,G.phase/6);
+    musicNodes.master.gain.setTargetAtTime(0.04+intensity*0.05,getAudio().currentTime,2);
+    musicNodes.lfoG.gain.setTargetAtTime(0.1+intensity*0.2,getAudio().currentTime,2);
+  } catch(e){}
+}
+
+function toggleMute() {
+  muted=!muted;
+  const btn=document.getElementById('mute-btn');
+  btn.textContent=muted?'🔇':'🔊';
+  btn.classList.toggle('muted',muted);
+  if(musicNodes){
+    try{musicNodes.master.gain.setTargetAtTime(muted?0:0.05,getAudio().currentTime,0.3);}catch(e){}
+  }
 }
 
 function showStealFloat(p,txt){
