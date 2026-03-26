@@ -523,7 +523,7 @@ function tryArrest(p) {
     p.el.style.transition='left 0.3s ease, top 0.3s ease';
     p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.zIndex=10;
     showEvent('🔒 CÁRCEL LLENA — AMPLÍA O ESPERA');
-    if(navigator.vibrate) navigator.vibrate([80,40,80]);
+    vibe([80,40,80]);
     const jp=document.getElementById('jail-panel');
     jp.classList.add('overflow'); setTimeout(()=>jp.classList.remove('overflow'),1500);
     return;
@@ -534,7 +534,7 @@ function tryArrest(p) {
   G.politicians=G.politicians.filter(x=>x.id!==p.id);
   G.arrested++; document.getElementById('s-arrested').textContent=G.arrested;
   playArrestSound();
-  if(navigator.vibrate) navigator.vibrate(50);
+  vibe(50);
   const reward=Math.round(8+p.tpl.stealRate*6); G.budget+=reward;
   showEvent(`✅ ${p.tpl.name} DETENIDO +€${reward}`);
   const cell={name:p.tpl.name,sprite:p.tpl.sprite,timeLeft:25+G.phase*4,maxTime:25+G.phase*4};
@@ -544,7 +544,7 @@ function tryArrest(p) {
 
 function escapeFromJail(cell) {
   showEvent(`⚠️ ${cell.name} HA ESCAPADO`);
-  if(navigator.vibrate) navigator.vibrate(150);
+  vibe(150);
   const arena=document.getElementById('arena'), W=arena.offsetWidth, H=arena.offsetHeight;
   const tpl=POLS.find(t=>t.name===cell.name)||POLS[0];
   const id=pid++, x=20+Math.random()*(W-90), y=35+Math.random()*(H-90);
@@ -618,6 +618,12 @@ function shareScore() {
     const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); confirm();
   });
 }
+
+// ── VIBRATION — requires prior user gesture on Android Chrome ──
+let canVibrate=false;
+document.addEventListener('touchstart',()=>{canVibrate=true;},{once:true,passive:true});
+document.addEventListener('mousedown',()=>{canVibrate=true;},{once:true,passive:true});
+function vibe(pattern){try{if(canVibrate&&navigator.vibrate)navigator.vibrate(pattern);}catch(e){}}
 
 let audioCtx=null;
 function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
@@ -695,44 +701,95 @@ function drawAttackLines() {
   animFrame=requestAnimationFrame(drawAttackLines);
 }
 
-// ── BACKGROUND MUSIC ──
-let musicNodes=null, muted=false, musicStarted=false;
+// ── BACKGROUND MUSIC — melodic sequencer ──
+let musicNodes=null, muted=false, musicStarted=false, seqTimeout=null;
+
+// Minor scale notes in Hz — D minor feel, tense
+const SCALE = [146.83,164.81,174.61,196.00,220.00,233.08,261.63,293.66];
+// Melodic patterns — indices into SCALE, vary per phase
+const PATTERNS = [
+  [0,2,4,2,0,3,2,0],       // phase 1-2: calm, descending
+  [4,3,2,0,2,4,5,4],       // phase 3: mid tension
+  [6,5,4,2,4,6,7,5],       // phase 4: rising
+  [7,6,5,4,6,7,5,3],       // phase 5-6: urgent, high
+];
 
 function startMusic() {
   if(musicStarted||muted) return;
   musicStarted=true;
   try {
     const ctx=getAudio();
-    const master=ctx.createGain(); master.gain.value=0.05; master.connect(ctx.destination);
-    // Bass drone
-    const bass=ctx.createOscillator(); bass.type='sawtooth'; bass.frequency.value=55;
-    const bassF=ctx.createBiquadFilter(); bassF.type='lowpass'; bassF.frequency.value=110;
-    const bassG=ctx.createGain(); bassG.gain.value=0.5;
-    bass.connect(bassF); bassF.connect(bassG); bassG.connect(master); bass.start();
-    // Mid pulse with LFO
-    const mid=ctx.createOscillator(); mid.type='square'; mid.frequency.value=110;
-    const midG=ctx.createGain(); midG.gain.value=0;
-    const lfo=ctx.createOscillator(); lfo.frequency.value=0.4;
-    const lfoG=ctx.createGain(); lfoG.gain.value=0.12;
-    lfo.connect(lfoG); lfoG.connect(midG.gain);
-    mid.connect(midG); midG.connect(master); mid.start(); lfo.start();
-    // High shimmer
-    const hi=ctx.createOscillator(); hi.type='sine'; hi.frequency.value=440;
-    const hiG=ctx.createGain(); hiG.gain.value=0;
-    const lfo2=ctx.createOscillator(); lfo2.frequency.value=0.13;
-    const lfo2G=ctx.createGain(); lfo2G.gain.value=0.03;
-    lfo2.connect(lfo2G); lfo2G.connect(hiG.gain);
-    hi.connect(hiG); hiG.connect(master); hi.start(); lfo2.start();
-    musicNodes={master,lfoG,lfo2G};
+    const master=ctx.createGain(); master.gain.value=0.07;
+    // Compressor for cleaner sound
+    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-18; comp.ratio.value=4;
+    master.connect(comp); comp.connect(ctx.destination);
+    // Bass drone — root note pulse
+    const bassG=ctx.createGain(); bassG.gain.value=0.3; bassG.connect(master);
+    musicNodes={master, bassG, ctx};
+    scheduleSequencer();
+    scheduleBass();
   } catch(e){}
+}
+
+function scheduleSequencer() {
+  if(!running&&musicStarted) { seqTimeout=setTimeout(scheduleSequencer,500); return; }
+  if(muted||!musicNodes) { seqTimeout=setTimeout(scheduleSequencer,300); return; }
+  try {
+    const ctx=musicNodes.ctx;
+    const patIdx=Math.min(3,Math.floor((G.phase-1)/1.5));
+    const pattern=PATTERNS[patIdx];
+    const stepIdx=Math.floor(Date.now()/300)%pattern.length; // 300ms per note
+    const freq=SCALE[pattern[stepIdx]];
+    const bpm_mult=0.8+Math.min(G.phase,6)*0.06; // speeds up with phase
+
+    // Lead melody note
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='square'; o.frequency.value=freq*2; // octave up
+    const t=ctx.currentTime;
+    const dur=0.28*bpm_mult;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.12,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g); g.connect(musicNodes.master);
+    o.start(t); o.stop(t+dur);
+
+    // Occasional harmony — every 4 steps
+    if(stepIdx%4===0) {
+      const o2=ctx.createOscillator(), g2=ctx.createGain();
+      o2.type='triangle'; o2.frequency.value=freq*1.5;
+      g2.gain.setValueAtTime(0,t);
+      g2.gain.linearRampToValueAtTime(0.05,t+0.03);
+      g2.gain.exponentialRampToValueAtTime(0.001,t+dur*1.5);
+      o2.connect(g2); g2.connect(musicNodes.master);
+      o2.start(t); o2.stop(t+dur*1.5);
+    }
+  } catch(e){}
+  const interval=Math.max(160, 300-(G.phase-1)*18);
+  seqTimeout=setTimeout(scheduleSequencer,interval);
+}
+
+function scheduleBass() {
+  if(!musicNodes) return;
+  try {
+    const ctx=musicNodes.ctx, t=ctx.currentTime;
+    const bassFreq=SCALE[0]; // root
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sawtooth'; o.frequency.value=bassFreq;
+    const filt=ctx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=200;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.25,t+0.05);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.6);
+    o.connect(filt); filt.connect(g); g.connect(musicNodes.master);
+    o.start(t); o.stop(t+0.6);
+  } catch(e){}
+  setTimeout(scheduleBass, Math.max(400,800-(G.phase-1)*40));
 }
 
 function updateMusicIntensity() {
   if(!musicNodes||muted) return;
   try {
     const intensity=Math.min(1,G.phase/6);
-    musicNodes.master.gain.setTargetAtTime(0.04+intensity*0.05,getAudio().currentTime,2);
-    musicNodes.lfoG.gain.setTargetAtTime(0.1+intensity*0.2,getAudio().currentTime,2);
+    musicNodes.master.gain.setTargetAtTime(0.06+intensity*0.06,musicNodes.ctx.currentTime,1.5);
   } catch(e){}
 }
 
@@ -742,7 +799,7 @@ function toggleMute() {
   btn.textContent=muted?'🔇':'🔊';
   btn.classList.toggle('muted',muted);
   if(musicNodes){
-    try{musicNodes.master.gain.setTargetAtTime(muted?0:0.05,getAudio().currentTime,0.3);}catch(e){}
+    try{musicNodes.master.gain.setTargetAtTime(muted?0:0.07,musicNodes.ctx.currentTime,0.3);}catch(e){}
   }
 }
 
