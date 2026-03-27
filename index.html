@@ -331,6 +331,8 @@ function freshState() {
     nextElection:90, electionActive:false, electionTimeLeft:0, popularityPenalty:0,
     electionsWon:0, electionsLost:0,
     damageByPol:{},
+    nextEvent:50, frozenUntil:0, scandaleUntil:0,
+    eventPowerup:null,
   };
 }
 
@@ -369,6 +371,7 @@ function mainTick() {
   G.time++;
   checkPhase();
   checkElection();
+  checkEvents();
   if(G.electionActive){G.electionTimeLeft--;updateElectionHUD();if(G.electionTimeLeft<=0)resolveElection();}
   if(G.popularityPenalty>0) G.popularityPenalty--;
   updateHUD(); checkDefeat();
@@ -383,15 +386,23 @@ function incomeTick() {
 
 function stealTick() {
   if(!running) return;
+  const frozen = G.frozenUntil > G.time;
+  const scandale = G.scandaleUntil > G.time;
   G.politicians.forEach(p=>{
     if(!p.alive||p.dragging) return;
-    const rate=p.tpl.stealRate*(1+(G.phase-1)*0.12);
+    if(frozen) return; // politicians can't steal while frozen
+    const mult = scandale ? 2 : 1;
+    const rate=p.tpl.stealRate*(1+(G.phase-1)*0.12)*mult;
     G[p.tpl.target]=Math.max(0,G[p.tpl.target]-rate);
     G.stolen+=rate;
     G.damageByPol[p.tpl.name]=(G.damageByPol[p.tpl.name]||0)+rate;
     showStealFloat(p,`-€${rate.toFixed(1)}`);
     flashSvc(p.tpl.target); updateServices();
   });
+  // Visual freeze indicator
+  const arena=document.getElementById('arena');
+  if(frozen) arena.style.filter='brightness(0.7) hue-rotate(180deg)';
+  else arena.style.filter='';
 }
 
 function jailTick() {
@@ -409,7 +420,8 @@ function jailTick() {
 
 function doSpawn() {
   if(!running) return;
-  spawnPol();
+  const MAX_POLS = 6;
+  if(G.politicians.filter(p=>p.alive).length < MAX_POLS) spawnPol();
   T.spawn=setTimeout(doSpawn,Math.max(2800,7000-G.phase*700)+Math.random()*1200);
 }
 
@@ -446,7 +458,11 @@ function resolveElection() {
   document.getElementById('election-overlay').classList.remove('active');
   const passing=['edu','san','jus'].filter(s=>G[s]>=50).length;
   G.nextElection=G.time+90;
-  if(passing>=2){
+  if(passing===3){
+    G.electionsWon++;
+    const bonus=80; G.budget+=bonus; updateBudget();
+    showEvent(`🇪🇺 FONDOS EUROPEOS +€${bonus}`); playElectionWinSound();
+  } else if(passing>=2){
     G.electionsWon++;
     const bonus=25+passing*10; G.budget+=bonus; updateBudget();
     showEvent(`🗳️ ELECCIONES GANADAS +€${bonus}`); playElectionWinSound();
@@ -454,6 +470,98 @@ function resolveElection() {
     G.electionsLost++; G.popularityPenalty=30;
     showEvent('🗳️ ELECCIONES PERDIDAS — RECORTES 30s'); playElectionLoseSound();
   }
+}
+
+// ── RANDOM EVENTS ──
+function checkEvents() {
+  if(G.time < G.nextEvent || G.electionActive) return;
+  G.nextEvent = G.time + 45 + Math.floor(Math.random()*30);
+  const events = ['inspeccion','escandalos','indulto'];
+  // weight: inspección more common than others
+  const roll = Math.random();
+  const ev = roll < 0.45 ? 'inspeccion' : roll < 0.72 ? 'escandalos' : 'indulto';
+  triggerEvent(ev);
+}
+
+function triggerEvent(ev) {
+  if(ev==='inspeccion') {
+    // Spawn draggable powerup in arena
+    const arena=document.getElementById('arena');
+    const W=arena.offsetWidth, H=arena.offsetHeight;
+    const x=W/2-25+Math.random()*60, y=H/2-25+Math.random()*60;
+    const el=document.createElement('div');
+    el.id='powerup-inspeccion';
+    el.style.cssText=`position:absolute;left:${x}px;top:${y}px;font-size:32px;cursor:grab;z-index:20;touch-action:none;animation:pol-spawn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;filter:drop-shadow(0 0 10px #00cfff);`;
+    el.textContent='🔍';
+    el.title='¡Inspección europea! Arrástrala a la cárcel';
+    arena.appendChild(el);
+    showEvent('🔍 INSPECCIÓN EUROPEA — ¡ARRÁSTRALA A LA CÁRCEL!');
+    // Make it draggable to jail — same logic as politicians
+    setupPowerupDrag(el, ()=>{
+      // Freeze all politicians 6s
+      G.frozenUntil = G.time + 6;
+      showEvent('❄️ ¡TODOS CONGELADOS 6s!');
+      playElectionWinSound();
+    });
+    // Auto-disappear after 10s
+    T.powerupExpiry = setTimeout(()=>{
+      if(el.parentNode) el.parentNode.removeChild(el);
+      G.eventPowerup=null;
+    }, 10000);
+
+  } else if(ev==='escandalos') {
+    G.scandaleUntil = G.time + 8;
+    showEvent('📰 ¡ESCÁNDALO MEDIÁTICO — ROBO DOBLE 8s!');
+    playElectionLoseSound();
+
+  } else if(ev==='indulto') {
+    const released = G.jailCells.filter(Boolean).length;
+    if(released===0) { G.nextEvent=G.time+20; return; } // no one to release, skip
+    G.jailCells = new Array(G.jailMax).fill(null);
+    renderJailCells(); updateJailCount();
+    showEvent(`🔓 ¡INDULTO! ${released} presos libres`);
+    // Respawn them
+    for(let i=0;i<released;i++) setTimeout(()=>{ if(running) spawnPol(); }, i*400);
+    playElectionLoseSound();
+  }
+}
+
+function setupPowerupDrag(el, onDrop) {
+  const jail=document.getElementById('jail-panel');
+  const arena=document.getElementById('arena');
+  let dragging=false, startX, startY, ox, oy;
+
+  function start(cx,cy) {
+    dragging=true; el.style.cursor='grabbing'; el.style.zIndex=200;
+    el.style.transition='none';
+    const r=el.getBoundingClientRect(), ar=arena.getBoundingClientRect();
+    ox=r.left-ar.left; oy=r.top-ar.top;
+    startX=cx; startY=cy;
+  }
+  function move(mx,my) {
+    if(!dragging) return;
+    el.style.left=(ox+mx-startX)+'px'; el.style.top=(oy+my-startY)+'px';
+    jail.classList.toggle('drop-target', mx>jail.getBoundingClientRect().left-20);
+  }
+  function end(mx,my) {
+    if(!dragging) return; dragging=false;
+    document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu);
+    document.removeEventListener('touchmove',tm); document.removeEventListener('touchend',te);
+    jail.classList.remove('drop-target');
+    const jRect=jail.getBoundingClientRect(), aRect=arena.getBoundingClientRect();
+    const isMobile=window.innerWidth<=600;
+    const hit=isMobile?(mx<aRect.left||mx>aRect.right||my<aRect.top||my>aRect.bottom):mx>jRect.left-20;
+    if(hit) {
+      if(el.parentNode) el.parentNode.removeChild(el);
+      clearTimeout(T.powerupExpiry);
+      onDrop();
+    }
+  }
+  const mm=e=>move(e.clientX,e.clientY), mu=e=>end(e.clientX,e.clientY);
+  const tm=e=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);};
+  const te=e=>end(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+  el.addEventListener('mousedown',e=>{e.preventDefault();start(e.clientX,e.clientY);document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);});
+  el.addEventListener('touchstart',e=>{e.preventDefault();start(e.touches[0].clientX,e.touches[0].clientY);document.addEventListener('touchmove',tm,{passive:false});document.addEventListener('touchend',te);},{passive:false});
 }
 
 function spawnPol() {
@@ -523,7 +631,6 @@ function tryArrest(p) {
     p.el.style.transition='left 0.3s ease, top 0.3s ease';
     p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; p.el.style.zIndex=10;
     showEvent('🔒 CÁRCEL LLENA — AMPLÍA O ESPERA');
-    vibe([80,40,80]);
     const jp=document.getElementById('jail-panel');
     jp.classList.add('overflow'); setTimeout(()=>jp.classList.remove('overflow'),1500);
     return;
@@ -534,7 +641,6 @@ function tryArrest(p) {
   G.politicians=G.politicians.filter(x=>x.id!==p.id);
   G.arrested++; document.getElementById('s-arrested').textContent=G.arrested;
   playArrestSound();
-  vibe(50);
   const reward=Math.round(8+p.tpl.stealRate*6); G.budget+=reward;
   showEvent(`✅ ${p.tpl.name} DETENIDO +€${reward}`);
   const cell={name:p.tpl.name,sprite:p.tpl.sprite,timeLeft:25+G.phase*4,maxTime:25+G.phase*4};
@@ -544,7 +650,6 @@ function tryArrest(p) {
 
 function escapeFromJail(cell) {
   showEvent(`⚠️ ${cell.name} HA ESCAPADO`);
-  vibe(150);
   const arena=document.getElementById('arena'), W=arena.offsetWidth, H=arena.offsetHeight;
   const tpl=POLS.find(t=>t.name===cell.name)||POLS[0];
   const id=pid++, x=20+Math.random()*(W-90), y=35+Math.random()*(H-90);
@@ -620,10 +725,6 @@ function shareScore() {
 }
 
 // ── VIBRATION — requires prior user gesture on Android Chrome ──
-let canVibrate=false;
-document.addEventListener('touchstart',()=>{canVibrate=true;},{once:true,passive:true});
-document.addEventListener('mousedown',()=>{canVibrate=true;},{once:true,passive:true});
-function vibe(pattern){try{if(canVibrate&&navigator.vibrate)navigator.vibrate(pattern);}catch(e){}}
 
 let audioCtx=null;
 function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
