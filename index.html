@@ -359,6 +359,9 @@ function restartGame() {
 function stopLoops() {
   Object.values(T).forEach(t=>{clearInterval(t);clearTimeout(t);}); T={};
   if(G.politicians) G.politicians.forEach(p=>clearInterval(p.wt));
+  // Close all overlays
+  document.getElementById('election-overlay').classList.remove('active');
+  document.getElementById('level-splash').classList.remove('active');
 }
 
 function startLoops() {
@@ -389,6 +392,10 @@ function incomeTick() {
 
 function stealTick() {
   if(!running) return;
+  // Pause during overlays (elections, level splash)
+  const overlayActive = document.getElementById('election-overlay').classList.contains('active')
+    || document.getElementById('level-splash').classList.contains('active');
+  if(overlayActive) return;
   const frozen = G.frozenUntil > G.time;
   const scandale = G.scandaleUntil > G.time;
   G.politicians.forEach(p=>{
@@ -584,6 +591,7 @@ function spawnPol() {
   G.politicians.push(pObj);
   pObj.wt=setInterval(()=>{
     if(!pObj.alive||pObj.dragging) return;
+    if(document.getElementById('election-overlay').classList.contains('active')) return;
     const speed = 40 + G.phase * 18;  // moves faster each phase
     const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*speed));
     const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*speed*0.7));
@@ -664,6 +672,7 @@ function escapeFromJail(cell) {
   G.politicians.push(pObj);
   pObj.wt=setInterval(()=>{
     if(!pObj.alive||pObj.dragging) return;
+    if(document.getElementById('election-overlay').classList.contains('active')) return;
     const speed = 40 + G.phase * 18;
     const nx=Math.max(10,Math.min(W-80,pObj.x+(Math.random()-.5)*speed));
     const ny=Math.max(30,Math.min(H-80,pObj.y+(Math.random()-.5)*speed*0.7));
