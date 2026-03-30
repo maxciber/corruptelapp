@@ -55,20 +55,22 @@ body::after {
 #arena-label { position:absolute; top:8px; left:10px; font-size:6px; color:var(--dim); letter-spacing:1px; z-index:2; pointer-events:none; }
 #arena { width:100%; height:100%; position:relative; background: repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px), repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(255,255,255,0.012) 50px,rgba(255,255,255,0.012) 51px); cursor:default; }
 #drag-hint { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); font-size:6px; color:var(--dim); letter-spacing:1px; pointer-events:none; white-space:nowrap; }
+#skyline-canvas { position:absolute; inset:0; pointer-events:none; z-index:1; }
 #attack-canvas { position:absolute; inset:0; pointer-events:none; z-index:5; }
 
 /* POLITICIAN — spawn animation */
-.politico { position:absolute; display:flex; flex-direction:column; align-items:center; cursor:grab; z-index:10; touch-action:none; padding:4px; animation:pol-spawn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
+.politico { position:absolute; display:flex; flex-direction:column; align-items:center; cursor:grab; z-index:10; touch-action:none; padding:4px 6px 5px; animation:pol-spawn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards; background:rgba(0,0,0,0.55); border:1px solid rgba(255,34,68,0.2); }
 @keyframes pol-spawn { 0%{opacity:0;transform:translateY(-18px) scale(0.4)} 100%{opacity:1;transform:translateY(0) scale(1)} }
 .politico:hover .pol-sprite { filter:brightness(1.4) drop-shadow(0 0 6px #ff4466); }
 .politico.dragging { cursor:grabbing; z-index:200; opacity:0.9; animation:none; }
 .politico.dragging .pol-sprite { transform:scale(1.15); }
 .politico.dangerous .pol-sprite { filter:drop-shadow(0 0 8px var(--red)); }
+.politico.dangerous { border-color:rgba(255,34,68,0.5); background:rgba(20,0,0,0.65); }
 .pol-sprite { font-size:30px; animation:pol-bob 1s steps(2) infinite; line-height:1; transition:transform 0.1s; }
 @keyframes pol-bob { 0%{transform:translateY(0)} 100%{transform:translateY(-3px)} }
-.pol-name { font-size:6px; color:var(--red); margin-top:3px; white-space:nowrap; text-shadow:0 0 6px var(--red); }
-.pol-role { font-size:5px; color:var(--dim); white-space:nowrap; margin-top:1px; }
-.pol-rate { font-size:5px; color:var(--orange); white-space:nowrap; margin-top:1px; }
+.pol-name { font-size:6px; color:var(--red); margin-top:3px; white-space:nowrap; text-shadow:0 0 8px var(--red), 0 1px 2px #000; }
+.pol-role { font-size:5px; color:#aaa; white-space:nowrap; margin-top:1px; text-shadow:0 1px 2px #000; }
+.pol-rate { font-size:5px; color:var(--orange); white-space:nowrap; margin-top:1px; text-shadow:0 0 6px var(--orange), 0 1px 2px #000; }
 .pol-steal-indicator { position:absolute; top:-16px; font-size:6px; color:var(--red); text-shadow:0 0 6px var(--red); animation:steal-pop 0.6s ease-out forwards; pointer-events:none; white-space:nowrap; }
 @keyframes steal-pop { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-16px)} }
 
@@ -270,6 +272,7 @@ body::after {
   <div id="main">
     <div id="arena-wrap">
       <div id="arena-label">▸ ARRASTRA LOS CORRUPTOS A LA CÁRCEL</div>
+      <canvas id="skyline-canvas"></canvas>
       <canvas id="attack-canvas"></canvas>
       <div id="arena"></div>
       <div id="drag-hint">AGARRA Y ARRASTRA ▶</div>
@@ -331,7 +334,7 @@ function freshState() {
     nextElection:90, electionActive:false, electionTimeLeft:0, popularityPenalty:0,
     electionsWon:0, electionsLost:0,
     damageByPol:{},
-    nextEvent:50, frozenUntil:0, scandaleUntil:0,
+    nextEvent:20, frozenUntil:0, scandaleUntil:0,
     eventPowerup:null,
   };
 }
@@ -340,7 +343,7 @@ function startGame() {
   document.getElementById('start-screen').style.display='none';
   G=freshState(); running=true;
   renderJailCells(); updateAll(); startLoops();
-  startMusic(); drawAttackLines();
+  startMusic(); drawAttackLines(); drawSkyline();
 }
 
 function restartGame() {
@@ -769,6 +772,112 @@ function playElectionLoseSound(){
     const ctx=getAudio(),t=ctx.currentTime;
     [300,220,180].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.setValueAtTime(0.12,t+i*0.15);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+0.4);o.connect(g);g.connect(ctx.destination);o.start(t+i*0.15);o.stop(t+i*0.15+0.4);});
   }catch(e){}
+}
+
+
+// ── SKYLINE ──
+let skylineBuildings = null;
+
+function generateBuildings(W, H) {
+  const buildings = [];
+  const count = Math.floor(W / 22);
+  for (let i = 0; i < count; i++) {
+    const w = 14 + Math.floor(Math.random() * 18);
+    const h = 30 + Math.floor(Math.random() * (H * 0.55));
+    const x = i * (W / count) + Math.random() * 4;
+    // Windows grid
+    const winCols = Math.floor((w - 4) / 7);
+    const winRows = Math.floor((h - 8) / 10);
+    const windows = [];
+    for (let wr = 0; wr < winRows; wr++) {
+      for (let wc = 0; wc < winCols; wc++) {
+        windows.push({ on: Math.random() > 0.35, flickerRate: Math.random() });
+      }
+    }
+    buildings.push({ x, w, h, windows, winCols, winRows });
+  }
+  return buildings;
+}
+
+function getCityState() {
+  if (!running) return { health: 1, label: 'PRÓSPERA' };
+  const avg = (G.edu + G.san + G.jus) / 3;
+  if (avg > 75) return { health: 1,    label: 'PRÓSPERA',   sky:'#0a0a1a', base:'#1a1a2e', win:'#ffd700', glow:'rgba(255,215,0,0.15)' };
+  if (avg > 50) return { health: 0.75, label: 'ESTABLE',    sky:'#080810', base:'#141420', win:'#aaaacc', glow:'rgba(150,150,200,0.08)' };
+  if (avg > 25) return { health: 0.4,  label: 'EN DECLIVE', sky:'#060608', base:'#0e0e14', win:'#556677', glow:'rgba(80,80,100,0.05)' };
+  return           { health: 0.1,  label: 'CORRUPTA',   sky:'#0a0303', base:'#140808', win:'#883322', glow:'rgba(140,40,20,0.08)' };
+}
+
+let skyTick = 0;
+function drawSkyline() {
+  const canvas = document.getElementById('skyline-canvas');
+  if (!canvas) { requestAnimationFrame(drawSkyline); return; }
+  const wrap = document.getElementById('arena-wrap');
+  const W = wrap.offsetWidth, H = wrap.offsetHeight;
+  if (canvas.width !== W || canvas.height !== H) {
+    canvas.width = W; canvas.height = H;
+    skylineBuildings = generateBuildings(W, H);
+  }
+  const ctx = canvas.getContext('2d');
+  const state = getCityState();
+  skyTick++;
+
+  // Sky gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, state.sky);
+  grad.addColorStop(1, state.base);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Ambient glow overlay
+  if (state.health > 0.5) {
+    const glow = ctx.createRadialGradient(W/2, H*0.3, 0, W/2, H*0.3, W*0.6);
+    glow.addColorStop(0, state.glow);
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Buildings
+  if (skylineBuildings) {
+    skylineBuildings.forEach(b => {
+      const by = H - b.h;
+      // Building body
+      const darkness = 0.15 + state.health * 0.12;
+      ctx.fillStyle = `rgba(20,20,30,${darkness + 0.7})`;
+      ctx.fillRect(b.x, by, b.w, b.h);
+      // Roof line
+      ctx.fillStyle = `rgba(60,60,80,0.5)`;
+      ctx.fillRect(b.x, by, b.w, 2);
+
+      // Windows
+      for (let wr = 0; wr < b.winRows; wr++) {
+        for (let wc = 0; wc < b.winCols; wc++) {
+          const wi = wr * b.winCols + wc;
+          const win = b.windows[wi];
+          // Random flicker based on health
+          if (skyTick % Math.floor(60 + win.flickerRate * 120) === 0) {
+            win.on = Math.random() < state.health * 0.85;
+          }
+          if (win.on) {
+            const wx = b.x + 3 + wc * 7;
+            const wy = by + 6 + wr * 10;
+            ctx.fillStyle = state.win;
+            ctx.globalAlpha = 0.5 + state.health * 0.45;
+            ctx.fillRect(wx, wy, 4, 5);
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+    });
+  }
+
+  // City state label — bottom left
+  ctx.font = '5px "Press Start 2P", monospace';
+  ctx.fillStyle = `rgba(255,255,255,${0.12 + state.health * 0.15})`;
+  ctx.fillText('CIUDAD: ' + state.label, 8, H - 8);
+
+  requestAnimationFrame(drawSkyline);
 }
 
 // ── ATTACK LINES ──
