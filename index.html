@@ -3,6 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta property="og:title" content="corruptelAPP — Operación Anti-Corrupción">
+<meta property="og:description" content="Arrastra a los políticos corruptos a la cárcel antes de que colapsen los servicios públicos. ¿Cuánto aguantas?">
+<meta property="og:url" content="https://corruptel.app">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://corruptel.app/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="corruptelAPP — Operación Anti-Corrupción">
+<meta name="twitter:description" content="Arrastra a los políticos corruptos a la cárcel antes de que colapsen los servicios públicos. ¿Cuánto aguantas?">
+<meta name="twitter:image" content="https://corruptel.app/preview.png">
+<meta name="twitter:site" content="@athradar">
 <title>corruptelAPP</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -57,6 +69,8 @@ body::after {
 #drag-hint { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); font-size:6px; color:var(--dim); letter-spacing:1px; pointer-events:none; white-space:nowrap; }
 #skyline-canvas { position:absolute; inset:0; pointer-events:none; z-index:1; }
 #attack-canvas { position:absolute; inset:0; pointer-events:none; z-index:5; }
+#freeze-overlay { display:none; position:absolute; inset:0; pointer-events:none; z-index:6; background:rgba(0,180,255,0.08); border:2px solid rgba(0,180,255,0.4); animation:freeze-pulse 0.6s ease-in-out infinite; }
+@keyframes freeze-pulse { 0%,100%{border-color:rgba(0,180,255,0.4)} 50%{border-color:rgba(0,220,255,0.8)} }
 
 /* POLITICIAN — spawn animation */
 .politico { position:absolute; display:flex; flex-direction:column; align-items:center; cursor:grab; z-index:10; touch-action:none; padding:4px 6px 5px; animation:pol-spawn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards; background:rgba(0,0,0,0.55); border:1px solid rgba(255,34,68,0.2); }
@@ -274,6 +288,7 @@ body::after {
       <div id="arena-label">▸ ARRASTRA LOS CORRUPTOS A LA CÁRCEL</div>
       <canvas id="skyline-canvas"></canvas>
       <canvas id="attack-canvas"></canvas>
+      <div id="freeze-overlay"></div>
       <div id="arena"></div>
       <div id="drag-hint">AGARRA Y ARRASTRA ▶</div>
     </div>
@@ -409,10 +424,9 @@ function stealTick() {
     showStealFloat(p,`-€${rate.toFixed(1)}`);
     flashSvc(p.tpl.target); updateServices();
   });
-  // Visual freeze indicator
-  const arena=document.getElementById('arena');
-  if(frozen) arena.style.filter='brightness(0.7) hue-rotate(180deg)';
-  else arena.style.filter='';
+  // Visual freeze indicator — overlay instead of filter (filter breaks emoji)
+  const freezeEl=document.getElementById('freeze-overlay');
+  if(freezeEl) freezeEl.style.display = frozen ? 'block' : 'none';
 }
 
 function jailTick() {
@@ -920,18 +934,32 @@ function drawAttackLines() {
   animFrame=requestAnimationFrame(drawAttackLines);
 }
 
-// ── BACKGROUND MUSIC — melodic sequencer ──
-let musicNodes=null, muted=false, musicStarted=false, seqTimeout=null;
+// ── BACKGROUND MUSIC — melodic sequencer v2 ──
+let musicNodes=null, muted=false, musicStarted=false, seqTimeout=null, bassTimeout=null;
 
-// Minor scale notes in Hz — D minor feel, tense
-const SCALE = [146.83,164.81,174.61,196.00,220.00,233.08,261.63,293.66];
-// Melodic patterns — indices into SCALE, vary per phase
-const PATTERNS = [
-  [0,2,4,2,0,3,2,0],       // phase 1-2: calm, descending
-  [4,3,2,0,2,4,5,4],       // phase 3: mid tension
-  [6,5,4,2,4,6,7,5],       // phase 4: rising
-  [7,6,5,4,6,7,5,3],       // phase 5-6: urgent, high
+// D natural minor scale — two octaves for variety
+const SCALE = [146.83,164.81,174.61,196.00,220.00,233.08,261.63,293.66,329.63,349.23,392.00,440.00];
+
+// Multiple melodic phrases — rotated to avoid repetition
+const PHRASES = [
+  [0,2,4,3,2,0,1,0],      // descending calm
+  [4,5,4,2,0,2,4,3],      // wandering mid
+  [2,4,6,5,4,2,3,2],      // rising tension
+  [7,6,5,3,5,7,8,6],      // higher register
+  [0,3,2,0,4,3,1,0],      // irregular rhythm feel
+  [5,6,5,3,1,2,3,1],      // chromatic tension
+  [8,7,6,4,6,8,9,7],      // climax high
 ];
+
+// Rhythm patterns — 1=play, 0=rest, adds groove
+const RHYTHMS = [
+  [1,1,1,1,1,1,1,1],  // all on
+  [1,1,0,1,1,1,0,1],  // syncopated
+  [1,0,1,1,0,1,1,0],  // offbeat
+  [1,1,1,0,1,0,1,1],  // sparse
+];
+
+let seqStep=0, seqPhrase=0, seqRhythm=0, seqBar=0;
 
 function startMusic() {
   if(musicStarted||muted) return;
@@ -939,76 +967,101 @@ function startMusic() {
   try {
     const ctx=getAudio();
     const master=ctx.createGain(); master.gain.value=0.07;
-    // Compressor for cleaner sound
-    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-18; comp.ratio.value=4;
+    const comp=ctx.createDynamicsCompressor();
+    comp.threshold.value=-16; comp.ratio.value=3; comp.attack.value=0.003; comp.release.value=0.25;
     master.connect(comp); comp.connect(ctx.destination);
-    // Bass drone — root note pulse
-    const bassG=ctx.createGain(); bassG.gain.value=0.3; bassG.connect(master);
-    musicNodes={master, bassG, ctx};
+    musicNodes={master, ctx};
     scheduleSequencer();
     scheduleBass();
   } catch(e){}
 }
 
 function scheduleSequencer() {
-  if(!running&&musicStarted) { seqTimeout=setTimeout(scheduleSequencer,500); return; }
   if(muted||!musicNodes) { seqTimeout=setTimeout(scheduleSequencer,300); return; }
-  try {
-    const ctx=musicNodes.ctx;
-    const patIdx=Math.min(3,Math.floor((G.phase-1)/1.5));
-    const pattern=PATTERNS[patIdx];
-    const stepIdx=Math.floor(Date.now()/300)%pattern.length; // 300ms per note
-    const freq=SCALE[pattern[stepIdx]];
-    const bpm_mult=0.8+Math.min(G.phase,6)*0.06; // speeds up with phase
 
-    // Lead melody note
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type='square'; o.frequency.value=freq*2; // octave up
-    const t=ctx.currentTime;
-    const dur=0.28*bpm_mult;
-    g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(0.12,t+0.02);
-    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-    o.connect(g); g.connect(musicNodes.master);
-    o.start(t); o.stop(t+dur);
+  const overlayActive = document.getElementById('election-overlay').classList.contains('active')
+    || document.getElementById('level-splash').classList.contains('active');
 
-    // Occasional harmony — every 4 steps
-    if(stepIdx%4===0) {
-      const o2=ctx.createOscillator(), g2=ctx.createGain();
-      o2.type='triangle'; o2.frequency.value=freq*1.5;
-      g2.gain.setValueAtTime(0,t);
-      g2.gain.linearRampToValueAtTime(0.05,t+0.03);
-      g2.gain.exponentialRampToValueAtTime(0.001,t+dur*1.5);
-      o2.connect(g2); g2.connect(musicNodes.master);
-      o2.start(t); o2.stop(t+dur*1.5);
-    }
-  } catch(e){}
-  const interval=Math.max(160, 300-(G.phase-1)*18);
-  seqTimeout=setTimeout(scheduleSequencer,interval);
+  if(!overlayActive) {
+    try {
+      const ctx=musicNodes.ctx, t=ctx.currentTime;
+      const phrase=PHRASES[seqPhrase % PHRASES.length];
+      const rhythm=RHYTHMS[seqRhythm % RHYTHMS.length];
+      const step=seqStep % phrase.length;
+      const shouldPlay=rhythm[step]===1;
+
+      if(shouldPlay) {
+        const noteIdx=phrase[step];
+        const freq=SCALE[noteIdx];
+        // Occasional octave jump for variety
+        const octave=Math.random()<0.12 ? 0.5 : 1;
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type= G.phase>=4 ? 'sawtooth' : 'square';
+        o.frequency.value=freq*2*octave;
+        const stepDur=Math.max(0.12, 0.26-(G.phase-1)*0.016);
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.11,t+0.015);
+        g.gain.exponentialRampToValueAtTime(0.001,t+stepDur*0.85);
+        o.connect(g); g.connect(musicNodes.master);
+        o.start(t); o.stop(t+stepDur);
+
+        // Harmony on beat 1 and 5
+        if(step===0||step===4) {
+          const o2=ctx.createOscillator(), g2=ctx.createGain();
+          o2.type='triangle';
+          o2.frequency.value=freq*1.498; // perfect fifth
+          g2.gain.setValueAtTime(0,t);
+          g2.gain.linearRampToValueAtTime(0.045,t+0.02);
+          g2.gain.exponentialRampToValueAtTime(0.001,t+stepDur*1.2);
+          o2.connect(g2); g2.connect(musicNodes.master);
+          o2.start(t); o2.stop(t+stepDur*1.2);
+        }
+      }
+
+      seqStep++;
+      // Every 8 steps = 1 bar
+      if(seqStep % 8===0) {
+        seqBar++;
+        // Change phrase every 2 bars, rhythm every 3 bars
+        if(seqBar % 2===0) seqPhrase = (seqPhrase + 1 + Math.floor(Math.random()*2)) % PHRASES.length;
+        if(seqBar % 3===0) seqRhythm = (seqRhythm + 1) % RHYTHMS.length;
+      }
+    } catch(e){}
+  }
+
+  const interval=Math.max(120, 260-(G.phase-1)*16);
+  seqTimeout=setTimeout(scheduleSequencer, interval);
 }
 
 function scheduleBass() {
   if(!musicNodes) return;
-  try {
-    const ctx=musicNodes.ctx, t=ctx.currentTime;
-    const bassFreq=SCALE[0]; // root
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type='sawtooth'; o.frequency.value=bassFreq;
-    const filt=ctx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=200;
-    g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(0.25,t+0.05);
-    g.gain.exponentialRampToValueAtTime(0.001,t+0.6);
-    o.connect(filt); filt.connect(g); g.connect(musicNodes.master);
-    o.start(t); o.stop(t+0.6);
-  } catch(e){}
-  setTimeout(scheduleBass, Math.max(400,800-(G.phase-1)*40));
+  const overlayActive = document.getElementById('election-overlay').classList.contains('active');
+  if(!overlayActive && !muted) {
+    try {
+      const ctx=musicNodes.ctx, t=ctx.currentTime;
+      // Bass alternates between root and fifth for movement
+      const roots=[SCALE[0], SCALE[0], SCALE[4], SCALE[2]];
+      const bassFreq=roots[seqBar%roots.length];
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      const filt=ctx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=180;
+      o.type='sawtooth'; o.frequency.value=bassFreq;
+      const dur=Math.max(0.3, 0.7-(G.phase-1)*0.05);
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.28,t+0.04);
+      g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+      o.connect(filt); filt.connect(g); g.connect(musicNodes.master);
+      o.start(t); o.stop(t+dur);
+    } catch(e){}
+  }
+  const interval=Math.max(300, 750-(G.phase-1)*50);
+  bassTimeout=setTimeout(scheduleBass, interval);
 }
 
 function updateMusicIntensity() {
   if(!musicNodes||muted) return;
   try {
     const intensity=Math.min(1,G.phase/6);
-    musicNodes.master.gain.setTargetAtTime(0.06+intensity*0.06,musicNodes.ctx.currentTime,1.5);
+    musicNodes.master.gain.setTargetAtTime(0.06+intensity*0.05,musicNodes.ctx.currentTime,1.5);
   } catch(e){}
 }
 
