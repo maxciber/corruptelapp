@@ -14,7 +14,7 @@
 <meta name="twitter:title" content="corruptelAPP — Operación Anti-Corrupción">
 <meta name="twitter:description" content="Arrastra a los políticos corruptos a la cárcel antes de que colapsen los servicios públicos. ¿Cuánto aguantas?">
 <meta name="twitter:image" content="https://corruptel.app/preview.png">
-<meta name="twitter:site" content="@athradar">
+<meta name="twitter:site" content="@franjpuente">
 <title>corruptelAPP</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -211,6 +211,20 @@ body::after {
 #penalty-indicator { display:none; position:fixed; top:0; left:0; right:0; height:3px; background:var(--red); z-index:300; animation:penalty-pulse 1s ease-in-out infinite; }
 #penalty-indicator.active { display:block; }
 @keyframes penalty-pulse { 50%{opacity:0.4;} }
+
+/* LAWYER */
+.abogado { position:absolute; top:-2px; right:-14px; font-size:18px; cursor:pointer; z-index:15; animation:pol-bob 0.8s steps(2) infinite; filter:drop-shadow(0 0 4px #00cfff); transition:transform 0.1s; }
+.abogado:hover { transform:scale(1.3); }
+.abogado:active { transform:scale(0.8); }
+.politico.defended { border-color:rgba(0,207,255,0.5); }
+.politico.defended .pol-sprite { opacity:0.6; }
+.pol-shield { font-size:9px; color:var(--blue); text-align:center; margin-top:1px; text-shadow:0 0 6px var(--blue); }
+
+/* HISTORICAL STATS on start screen */
+#hist-stats { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:440px; width:100%; }
+.hstat { background:var(--panel); border:1px solid var(--border); padding:8px 12px; display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; min-width:80px; }
+.hstat-label { font-size:4px; color:var(--dim); text-align:center; }
+.hstat-val { font-size:9px; color:var(--yellow); }
 </style>
 </head>
 <body>
@@ -224,6 +238,12 @@ body::after {
     Cada 90s llegan las <span>🗳️ ELECCIONES</span> — necesitas ≥50% en 2 servicios.<br>
     Si pierdes: <span>recortes de presupuesto</span> durante 30s.<br><br>
     Si <span>Educación, Sanidad o Justicia</span> llegan a 0… has perdido.
+  </div>
+  <div id="hist-stats">
+    <div class="hstat"><div class="hstat-label">PARTIDAS</div><div class="hstat-val" id="hs-games">0</div></div>
+    <div class="hstat"><div class="hstat-label">DETENIDOS</div><div class="hstat-val" id="hs-arrested">0</div></div>
+    <div class="hstat"><div class="hstat-label">TIEMPO TOTAL</div><div class="hstat-val" id="hs-time">0m</div></div>
+    <div class="hstat"><div class="hstat-label">RÉCORD</div><div class="hstat-val" id="hs-record">--</div></div>
   </div>
   <button id="start-btn" onclick="startGame()">▶ COMENZAR</button>
 </div>
@@ -354,6 +374,33 @@ function freshState() {
   };
 }
 
+// ── HISTORICAL STATS ──
+function loadHistStats() {
+  const hs = JSON.parse(localStorage.getItem('cap_hist')||'{}');
+  return { games: hs.games||0, arrested: hs.arrested||0, totalTime: hs.totalTime||0 };
+}
+
+function saveHistStats() {
+  const hs = loadHistStats();
+  hs.games++;
+  hs.arrested += G.arrested;
+  hs.totalTime += G.time;
+  localStorage.setItem('cap_hist', JSON.stringify(hs));
+}
+
+function renderHistStats() {
+  const hs = loadHistStats();
+  const rec = parseInt(localStorage.getItem('cap_rec')||'0');
+  document.getElementById('hs-games').textContent = hs.games;
+  document.getElementById('hs-arrested').textContent = hs.arrested;
+  const totalMin = Math.floor(hs.totalTime/60);
+  document.getElementById('hs-time').textContent = totalMin < 60 ? totalMin+'m' : Math.floor(totalMin/60)+'h'+totalMin%60+'m';
+  if(rec>0) {
+    const rm=String(Math.floor(rec/60)).padStart(2,'0'), rs=String(rec%60).padStart(2,'0');
+    document.getElementById('hs-record').textContent = rm+':'+rs;
+  }
+}
+
 function startGame() {
   document.getElementById('start-screen').style.display='none';
   G=freshState(); running=true;
@@ -363,6 +410,7 @@ function startGame() {
 
 function restartGame() {
   document.getElementById('gameover-screen').classList.remove('active');
+  renderHistStats();
   document.getElementById('share-confirm').style.display='none';
   stopLoops();
   document.getElementById('arena').innerHTML='';
@@ -598,11 +646,23 @@ function spawnPol() {
   const el=document.createElement('div');
   el.className='politico'+(tpl.stealRate>=2?' dangerous':'');
   el.id=`p${id}`; el.style.left=x+'px'; el.style.top=y+'px';
-  el.innerHTML=`<div class="pol-sprite">${tpl.sprite}</div><div class="pol-name">${tpl.name}</div><div class="pol-role">${tpl.role}</div><div class="pol-rate">-€${tpl.stealRate}/s → ${SVC_NAMES[tpl.target].substring(0,3)}</div>`;
+  // Lawyer: always on Ministro, and from phase 3 with 35% chance
+  const hasLawyer = (tpl === POLS[11]) || (G.phase >= 3 && Math.random() < 0.35);
+  el.innerHTML=`<div class="pol-sprite">${tpl.sprite}</div><div class="pol-name">${tpl.name}</div><div class="pol-role">${tpl.role}</div><div class="pol-rate">-€${tpl.stealRate}/s → ${SVC_NAMES[tpl.target].substring(0,3)}</div>${hasLawyer ? '<div class="pol-shield">🛡️ AFORADO</div>' : ''}`;
+  if(hasLawyer) el.classList.add('defended');
   arena.appendChild(el);
   playSpawnSound();
-  const pObj={id,el,tpl,x,y,alive:true,dragging:false};
+  const pObj={id,el,tpl,x,y,alive:true,dragging:false,defended:hasLawyer};
   G.politicians.push(pObj);
+
+  // Add lawyer element
+  if(hasLawyer) {
+    const lw=document.createElement('div');
+    lw.className='abogado'; lw.textContent='👨‍⚖️'; lw.title='¡Haz clic para despedir al abogado!';
+    el.appendChild(lw);
+    lw.addEventListener('click', e=>{ e.stopPropagation(); dismissLawyer(pObj, lw); });
+    lw.addEventListener('touchend', e=>{ e.preventDefault(); e.stopPropagation(); dismissLawyer(pObj, lw); }, {passive:false});
+  }
   pObj.wt=setInterval(()=>{
     if(!pObj.alive||pObj.dragging) return;
     if(document.getElementById('election-overlay').classList.contains('active')) return;
@@ -618,6 +678,27 @@ function spawnPol() {
   document.getElementById('drag-hint').style.display='none';
 }
 
+function dismissLawyer(p, lw) {
+  if(!p.defended) return;
+  p.defended = false;
+  p.el.classList.remove('defended');
+  // Remove shield text
+  const shield = p.el.querySelector('.pol-shield');
+  if(shield) shield.remove();
+  // Animate lawyer away
+  lw.style.transition='opacity 0.3s, transform 0.3s';
+  lw.style.opacity='0'; lw.style.transform='scale(2) translateY(-10px)';
+  setTimeout(()=>{ if(lw.parentNode) lw.parentNode.removeChild(lw); }, 300);
+  showEvent(`⚖️ Abogado de ${p.tpl.name} despedido`);
+  // Small sound
+  try {
+    const ctx=getAudio(), t=ctx.currentTime, o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(800,t); o.frequency.exponentialRampToValueAtTime(400,t+0.15);
+    g.gain.setValueAtTime(0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+0.2);
+  } catch(e){}
+}
+
 function setupDrag(p) {
   p.el.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();beginDrag(p,e.clientX,e.clientY);});
   p.el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();beginDrag(p,e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
@@ -625,6 +706,7 @@ function setupDrag(p) {
 
 function beginDrag(p,cx,cy) {
   if(!running||!p.alive||p.dragging) return;
+  if(p.defended) { showEvent('🛡️ DESPIDE AL ABOGADO PRIMERO'); return; }
   p.dragging=true; p.el.classList.add('dragging');
   p.el.style.transition='none'; p.el.style.zIndex=200;
   const jail=document.getElementById('jail-panel'), arena=document.getElementById('arena');
@@ -1118,6 +1200,7 @@ function updateBudget(){
 function checkDefeat(){
   const col=['edu','san','jus'].find(s=>G[s]<=0); if(!col) return;
   running=false; stopLoops();
+  saveHistStats();
   const isNew=G.time>G.record;
   if(isNew){G.record=G.time;localStorage.setItem('cap_rec',G.time);}
   const mm=String(Math.floor(G.time/60)).padStart(2,'0'),ss=String(G.time%60).padStart(2,'0');
@@ -1132,6 +1215,8 @@ function checkDefeat(){
   document.getElementById('go-record-val').textContent=(isNew?'★ NUEVO: ':'')+rm+':'+rs;
   document.getElementById('gameover-screen').classList.add('active');
 }
+// Init on load
+renderHistStats();
 </script>
 </body>
 </html>
