@@ -533,11 +533,11 @@ function resolveElection() {
   if(passing===3){
     G.electionsWon++;
     const bonus=80; G.budget+=bonus; updateBudget();
-    showEvent(`🇪🇺 FONDOS EUROPEOS +€${bonus}`); playElectionWinSound();
+    showEvent(`🇪🇺 FONDOS EUROPEOS +€${bonus}`); playElectionWinSound(); spawnParticles('confetti',0,0); setTimeout(()=>spawnParticles('confetti',0,0),400);
   } else if(passing>=2){
     G.electionsWon++;
     const bonus=25+passing*10; G.budget+=bonus; updateBudget();
-    showEvent(`🗳️ ELECCIONES GANADAS +€${bonus}`); playElectionWinSound();
+    showEvent(`🗳️ ELECCIONES GANADAS +€${bonus}`); playElectionWinSound(); spawnParticles('confetti',0,0);
   } else {
     G.electionsLost++; G.popularityPenalty=30;
     showEvent('🗳️ ELECCIONES PERDIDAS — RECORTES 30s'); playElectionLoseSound();
@@ -583,7 +583,7 @@ function triggerEvent(ev) {
 
   } else if(ev==='escandalos') {
     G.scandaleUntil = G.time + 8;
-    showEvent('📰 ¡ESCÁNDALO MEDIÁTICO — ROBO DOBLE 8s!');
+    showEvent('📰 ¡ESCÁNDALO MEDIÁTICO — ROBO DOBLE 8s!'); spawnParticles('scandal',0,0);
     playElectionLoseSound();
 
   } else if(ev==='indulto') {
@@ -743,6 +743,7 @@ function tryArrest(p) {
     return;
   }
   p.alive=false; p.dragging=false; clearInterval(p.wt);
+  try{const pr2=p.el.getBoundingClientRect(),ar2=document.getElementById('arena').getBoundingClientRect();spawnParticles('arrest',pr2.left+pr2.width/2-ar2.left,pr2.top+pr2.height/2-ar2.top);}catch(e){}
   p.el.style.transition='opacity 0.2s, transform 0.2s'; p.el.style.opacity='0'; p.el.style.transform='scale(0.4)';
   setTimeout(()=>p.el.parentNode&&p.el.parentNode.removeChild(p.el),220);
   G.politicians=G.politicians.filter(x=>x.id!==p.id);
@@ -757,6 +758,9 @@ function tryArrest(p) {
 
 function escapeFromJail(cell) {
   showEvent(`⚠️ ${cell.name} HA ESCAPADO`);
+  // Escape particles from jail area
+  const jp=document.getElementById('jail-panel'), ar=document.getElementById('arena');
+  if(jp&&ar){const jr=jp.getBoundingClientRect(),arr=ar.getBoundingClientRect(); spawnParticles('escape',arr.width+jr.width/2,jr.top-arr.top+jr.height/2);}
   const arena=document.getElementById('arena'), W=arena.offsetWidth, H=arena.offsetHeight;
   const tpl=POLS.find(t=>t.name===cell.name)||POLS[0];
   const id=pid++, x=20+Math.random()*(W-90), y=35+Math.random()*(H-90);
@@ -880,109 +884,217 @@ function playElectionLoseSound(){
 }
 
 
-// ── SKYLINE ──
+// ── SKYLINE RICO ──
 let skylineBuildings = null;
+const BUILDING_TYPES = ['rect','tower','wide','dome'];
 
 function generateBuildings(W, H) {
   const buildings = [];
-  const count = Math.floor(W / 22);
+  const count = Math.floor(W / 20);
   for (let i = 0; i < count; i++) {
-    const w = 14 + Math.floor(Math.random() * 18);
-    const h = 30 + Math.floor(Math.random() * (H * 0.55));
-    const x = i * (W / count) + Math.random() * 4;
-    // Windows grid
-    const winCols = Math.floor((w - 4) / 7);
-    const winRows = Math.floor((h - 8) / 10);
+    const type = BUILDING_TYPES[Math.floor(Math.random()*BUILDING_TYPES.length)];
+    let w, h;
+    if(type==='tower')     { w=10+Math.floor(Math.random()*8);  h=50+Math.floor(Math.random()*(H*0.55)); }
+    else if(type==='wide') { w=28+Math.floor(Math.random()*20); h=20+Math.floor(Math.random()*(H*0.35)); }
+    else if(type==='dome') { w=16+Math.floor(Math.random()*12); h=35+Math.floor(Math.random()*(H*0.4)); }
+    else                   { w=14+Math.floor(Math.random()*16); h=30+Math.floor(Math.random()*(H*0.5)); }
+    const x = i*(W/count) + Math.random()*3;
+    const winCols = Math.max(1, Math.floor((w-4)/7));
+    const winRows = Math.max(1, Math.floor((h-10)/10));
     const windows = [];
-    for (let wr = 0; wr < winRows; wr++) {
-      for (let wc = 0; wc < winCols; wc++) {
-        windows.push({ on: Math.random() > 0.35, flickerRate: Math.random() });
-      }
-    }
-    buildings.push({ x, w, h, windows, winCols, winRows });
+    for(let wr=0;wr<winRows;wr++) for(let wc=0;wc<winCols;wc++)
+      windows.push({on:Math.random()>0.35, flicker:Math.random()});
+    const hasAntenna = type==='tower' && Math.random()>0.4;
+    const smokeX = x + w/2;
+    buildings.push({x,w,h,type,windows,winCols,winRows,hasAntenna,smokeX,smokeOffset:Math.random()*100});
   }
   return buildings;
 }
 
 function getCityState() {
-  if (!running) return { health: 1, label: 'PRÓSPERA' };
-  const avg = (G.edu + G.san + G.jus) / 3;
-  if (avg > 75) return { health: 1,    label: 'PRÓSPERA',   sky:'#0a0a1a', base:'#1a1a2e', win:'#ffd700', glow:'rgba(255,215,0,0.15)' };
-  if (avg > 50) return { health: 0.75, label: 'ESTABLE',    sky:'#080810', base:'#141420', win:'#aaaacc', glow:'rgba(150,150,200,0.08)' };
-  if (avg > 25) return { health: 0.4,  label: 'EN DECLIVE', sky:'#060608', base:'#0e0e14', win:'#556677', glow:'rgba(80,80,100,0.05)' };
-  return           { health: 0.1,  label: 'CORRUPTA',   sky:'#0a0303', base:'#140808', win:'#883322', glow:'rgba(140,40,20,0.08)' };
+  if(!running) return {health:1,label:'PRÓSPERA',sky:'#0a0a1a',base:'#1a1a2e',win:'#ffd700',glow:'rgba(255,215,0,0.15)',smoke:false};
+  const avg=(G.edu+G.san+G.jus)/3;
+  if(avg>75) return {health:1,    label:'PRÓSPERA',   sky:'#080818',base:'#161630',win:'#ffd700',glow:'rgba(255,215,0,0.18)',smoke:false};
+  if(avg>50) return {health:0.75, label:'ESTABLE',    sky:'#080810',base:'#141420',win:'#aaaacc',glow:'rgba(150,150,200,0.08)',smoke:false};
+  if(avg>25) return {health:0.4,  label:'EN DECLIVE', sky:'#060608',base:'#0e0e14',win:'#445566',glow:'rgba(60,60,80,0.05)',smoke:true};
+  return            {health:0.1,  label:'CORRUPTA',   sky:'#0d0303',base:'#180606',win:'#772211',glow:'rgba(180,30,10,0.1)',smoke:true};
 }
 
-let skyTick = 0;
+let skyTick=0, smokeParticles=[];
+
 function drawSkyline() {
-  const canvas = document.getElementById('skyline-canvas');
-  if (!canvas) { requestAnimationFrame(drawSkyline); return; }
-  const wrap = document.getElementById('arena-wrap');
-  const W = wrap.offsetWidth, H = wrap.offsetHeight;
-  if (canvas.width !== W || canvas.height !== H) {
-    canvas.width = W; canvas.height = H;
-    skylineBuildings = generateBuildings(W, H);
+  const canvas=document.getElementById('skyline-canvas');
+  if(!canvas){requestAnimationFrame(drawSkyline);return;}
+  const wrap=document.getElementById('arena-wrap');
+  const W=wrap.offsetWidth, H=wrap.offsetHeight;
+  if(canvas.width!==W||canvas.height!==H){
+    canvas.width=W; canvas.height=H;
+    skylineBuildings=generateBuildings(W,H);
+    smokeParticles=[];
   }
-  const ctx = canvas.getContext('2d');
-  const state = getCityState();
+  const ctx=canvas.getContext('2d');
+  const state=getCityState();
   skyTick++;
 
-  // Sky gradient
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, state.sky);
-  grad.addColorStop(1, state.base);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
+  // Sky
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,state.sky); grad.addColorStop(1,state.base);
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
 
-  // Ambient glow overlay
-  if (state.health > 0.5) {
-    const glow = ctx.createRadialGradient(W/2, H*0.3, 0, W/2, H*0.3, W*0.6);
-    glow.addColorStop(0, state.glow);
-    glow.addColorStop(1, 'transparent');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, W, H);
+  // Glow
+  if(state.health>0.4){
+    const g=ctx.createRadialGradient(W/2,H*0.25,0,W/2,H*0.25,W*0.55);
+    g.addColorStop(0,state.glow); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  }
+
+  // Smoke particles (corrupted city)
+  if(state.smoke && skylineBuildings) {
+    if(skyTick%4===0 && smokeParticles.length<60) {
+      const rb=skylineBuildings[Math.floor(Math.random()*skylineBuildings.length)];
+      smokeParticles.push({x:rb.smokeX,y:H-rb.h-2,vx:(Math.random()-0.5)*0.4,vy:-0.6-Math.random()*0.4,life:1,size:3+Math.random()*4});
+    }
+    smokeParticles=smokeParticles.filter(p=>p.life>0);
+    smokeParticles.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.life-=0.008; p.size+=0.05;
+      ctx.globalAlpha=p.life*0.25*(state.health<0.1?0.8:0.4);
+      ctx.fillStyle=state.health<0.1?'#ff3300':'#444444';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha=1;
   }
 
   // Buildings
-  if (skylineBuildings) {
-    skylineBuildings.forEach(b => {
-      const by = H - b.h;
-      // Building body
-      const darkness = 0.15 + state.health * 0.12;
-      ctx.fillStyle = `rgba(20,20,30,${darkness + 0.7})`;
-      ctx.fillRect(b.x, by, b.w, b.h);
-      // Roof line
-      ctx.fillStyle = `rgba(60,60,80,0.5)`;
-      ctx.fillRect(b.x, by, b.w, 2);
+  if(skylineBuildings) {
+    skylineBuildings.forEach(b=>{
+      const by=H-b.h;
+      // Body
+      ctx.fillStyle=`rgba(18,18,28,0.88)`;
+      if(b.type==='dome'){
+        // Dome roof
+        ctx.fillRect(b.x,by+b.h*0.25,b.w,b.h*0.75);
+        ctx.beginPath(); ctx.ellipse(b.x+b.w/2,by+b.h*0.25,b.w/2,b.h*0.25,0,Math.PI,0,true); ctx.fill();
+      } else if(b.type==='tower'){
+        // Tapered tower
+        ctx.beginPath();
+        ctx.moveTo(b.x+b.w*0.1,by); ctx.lineTo(b.x+b.w*0.9,by);
+        ctx.lineTo(b.x+b.w,by+b.h); ctx.lineTo(b.x,by+b.h);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.fillRect(b.x,by,b.w,b.h);
+      }
+      // Roof accent
+      ctx.fillStyle=`rgba(50,55,80,0.6)`;
+      ctx.fillRect(b.x,by,b.w,2);
+
+      // Antenna on towers
+      if(b.hasAntenna){
+        ctx.strokeStyle=`rgba(80,80,120,0.7)`;
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(b.x+b.w/2,by); ctx.lineTo(b.x+b.w/2,by-12); ctx.stroke();
+        // Blinking light at top
+        const blink=Math.sin(skyTick*0.08+b.smokeOffset)>0;
+        ctx.globalAlpha=blink?0.9:0.2;
+        ctx.fillStyle=state.health>0.5?'#39ff14':'#ff2244';
+        ctx.fillRect(b.x+b.w/2-1,by-13,3,3);
+        ctx.globalAlpha=1;
+      }
 
       // Windows
-      for (let wr = 0; wr < b.winRows; wr++) {
-        for (let wc = 0; wc < b.winCols; wc++) {
-          const wi = wr * b.winCols + wc;
-          const win = b.windows[wi];
-          // Random flicker based on health
-          if (skyTick % Math.floor(60 + win.flickerRate * 120) === 0) {
-            win.on = Math.random() < state.health * 0.85;
-          }
-          if (win.on) {
-            const wx = b.x + 3 + wc * 7;
-            const wy = by + 6 + wr * 10;
-            ctx.fillStyle = state.win;
-            ctx.globalAlpha = 0.5 + state.health * 0.45;
-            ctx.fillRect(wx, wy, 4, 5);
-            ctx.globalAlpha = 1;
+      for(let wr=0;wr<b.winRows;wr++){
+        for(let wc=0;wc<b.winCols;wc++){
+          const wi=wr*b.winCols+wc;
+          const win=b.windows[wi];
+          if(skyTick%Math.floor(50+win.flicker*140)===0)
+            win.on=Math.random()<state.health*0.82;
+          if(win.on){
+            const wx=b.x+3+wc*7, wy=by+6+wr*10;
+            ctx.fillStyle=state.win;
+            ctx.globalAlpha=0.45+state.health*0.5;
+            ctx.fillRect(wx,wy,4,5);
+            // Warm glow around window in prosperous city
+            if(state.health>0.75){
+              ctx.globalAlpha=0.08;
+              ctx.fillStyle='#ffcc44';
+              ctx.fillRect(wx-1,wy-1,6,7);
+            }
+            ctx.globalAlpha=1;
           }
         }
       }
     });
   }
 
-  // City state label — bottom left
-  ctx.font = '5px "Press Start 2P", monospace';
-  ctx.fillStyle = `rgba(255,255,255,${0.12 + state.health * 0.15})`;
-  ctx.fillText('CIUDAD: ' + state.label, 8, H - 8);
+  // Label
+  ctx.font='5px "Press Start 2P", monospace';
+  ctx.fillStyle=`rgba(255,255,255,${0.1+state.health*0.18})`;
+  ctx.fillText('CIUDAD: '+state.label, 8, H-8);
 
   requestAnimationFrame(drawSkyline);
+}
+
+// ── PARTICLES ──
+let particles=[];
+
+function spawnParticles(type, x, y) {
+  const arena=document.getElementById('arena');
+  const W=arena.offsetWidth, H=arena.offsetHeight;
+  if(type==='arrest'){
+    for(let i=0;i<18;i++){
+      const angle=Math.random()*Math.PI*2, speed=2+Math.random()*4;
+      particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-2,
+        life:1,size:3+Math.random()*4,color:Math.random()>0.5?'#ffd700':'#39ff14',type:'burst'});
+    }
+  } else if(type==='confetti'){
+    for(let i=0;i<50;i++){
+      const colors=['#ffd700','#39ff14','#00cfff','#cc44ff','#ff8c00','#ff2244'];
+      particles.push({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*3,vy:2+Math.random()*3,
+        life:1,size:4+Math.random()*5,color:colors[Math.floor(Math.random()*colors.length)],
+        type:'confetti',rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*0.2});
+    }
+  } else if(type==='scandal'){
+    for(let i=0;i<12;i++){
+      particles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,
+        life:1,size:Math.random()*W*0.3,color:'rgba(255,34,68,0.15)',type:'flash'});
+    }
+  } else if(type==='escape'){
+    for(let i=0;i<20;i++){
+      const angle=-Math.PI/2+(Math.random()-0.5)*1.2, speed=1.5+Math.random()*3;
+      particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+        life:1,size:3+Math.random()*4,color:'#ff8c00',type:'burst'});
+    }
+  }
+}
+
+function updateParticles() {
+  const canvas=document.getElementById('attack-canvas');
+  if(!canvas||particles.length===0) return;
+  // Draw on attack canvas (already in rAF loop)
+}
+
+function drawParticles(ctx, W, H) {
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    if(p.type==='burst'){
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.life-=0.03; p.size*=0.97;
+      ctx.globalAlpha=p.life;
+      ctx.fillStyle=p.color;
+      ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);
+    } else if(p.type==='confetti'){
+      p.x+=p.vx; p.y+=p.vy; p.vy*=0.99; p.life-=0.008; p.rot+=p.rotV;
+      ctx.globalAlpha=Math.min(1,p.life*2);
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.color;
+      ctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
+      ctx.restore();
+    } else if(p.type==='flash'){
+      p.life-=0.08;
+      ctx.globalAlpha=p.life*0.6;
+      ctx.fillStyle=p.color;
+      ctx.fillRect(0,0,W,H);
+    }
+    ctx.globalAlpha=1;
+  });
 }
 
 // ── ATTACK LINES ──
@@ -1013,6 +1125,8 @@ function drawAttackLines() {
       ctx2.restore();
     });
   }
+  // Draw particles
+  drawParticles(ctx2, canvas.width, canvas.height);
   animFrame=requestAnimationFrame(drawAttackLines);
 }
 
